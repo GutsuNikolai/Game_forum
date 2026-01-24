@@ -1,0 +1,39 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: game-forum
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/game_forum
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate     # IMPORTANT: используем Flyway, а не авто-схему Hibernate
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.springframework.security: info
+
+# Настройки под JWT (если будешь делать)
+app:
+  security:
+    jwt:
+      secret: "VERY_HARD_STRANGE_UNUSUAL_RANDOM_SECRET_32+_CHARS_MIN"
+      issuer: "game-forum"
+      access-token-ttl-minutes: 60
