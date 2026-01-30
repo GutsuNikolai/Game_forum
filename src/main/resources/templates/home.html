@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameForum - Игровое сообщество</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Хедер -->
+    <div id="header"></div>
+
+    <!-- Основной контент -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Герой-секция -->
+            <section class="hero-section glass-panel">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <span class="gradient-text">Крупнейшее игровое</span>
+                        <span class="gradient-text">сообщество</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        Присоединяйтесь к миллионам геймеров. Обсуждайте игры, 
+                        находите единомышленников, создавайте группы и делитесь 
+                        своими достижениями.
+                    </p>
+                    <div class="hero-buttons">
+                        <button class="btn-primary glass-btn" id="joinBtn">
+                            <i class="fas fa-gamepad"></i>
+                            Присоединиться
+                        </button>
+                        <a href="catalog.html" class="btn-secondary glass-btn">
+                            <i class="fas fa-list"></i>
+                            Каталог игр
+                        </a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="game-card glass-card">
+                        <div class="game-badge">🔥 Популярно</div>
+                        <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                            alt="Игровая тематика" class="game-image">
+                        <div class="game-info">
+                            <h3>Cyberpunk 2077</h3>
+                            <p>1,245 обсуждений</p>
+                        </div>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat-item glass-card">
+                            <i class="fas fa-users"></i>
+                            <div>
+                                <span class="stat-number">1,2M+</span>
+                                <span class="stat-label">Участников</span>
+                            </div>
+                        </div>
+                        <div class="stat-item glass-card">
+                            <i class="fas fa-comments"></i>
+                            <div>
+                                <span class="stat-number">580K+</span>
+                                <span class="stat-label">Обсуждений</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Популярные игры -->
+            <section class="games-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-fire"></i> Популярные игры</h2>
+                    <a href="catalog.html" class="view-all">
+                        Все игры <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                
+                <div class="games-grid">
+                    <!-- Игра 1 -->
+                    <div class="game-item glass-card">
+                        <div class="game-rank">#1</div>
+                        <div class="game-cover">
+                            <img src="https://images.unsplash.com/photo-1552820728-8b83bb6b773f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                                alt="Elden Ring">
+                        </div>
+                        <div class="game-details">
+                            <h3>Elden Ring</h3>
+                            <div class="game-meta">
+                                <span class="game-category">RPG</span>
+                                <span class="game-rating">
+                                    <i class="fas fa-star"></i> 4.9
+                                </span>
+                            </div>
+                            <p class="game-description">
+                                От создателей Dark Souls. Исследуйте мир междуземья.
+                            </p>
+                            <div class="game-stats">
+                                <span><i class="fas fa-comments"></i> 845</span>
+                                <span><i class="fas fa-users"></i> 12K</span>
+                            </div>
+                        </div>
+                        <button class="game-join glass-btn">
+                            <i class="fas fa-plus"></i>
+                            Присоединиться
+                        </button>
+                    </div>
+
+                    <!-- Игра 2 -->
+                    <div class="game-item glass-card">
+                        <div class="game-rank">#2</div>
+                        <div class="game-cover">
+                            <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                                alt="Valorant">
+                        </div>
+                        <div class="game-details">
+                            <h3>Valorant</h3>
+                            <div class="game-meta">
+                                <span class="game-category">Шутер</span>
+                                <span class="game-rating">
+                                    <i class="fas fa-star"></i> 4.7
+                                </span>
+                            </div>
+                            <p class="game-description">
+                                Тактический шутер от Riot Games. Соревнуйтесь в командных боях.
+                            </p>
+                            <div class="game-stats">
+                                <span><i class="fas fa-comments"></i> 1.2K</span>
+                                <span><i class="fas fa-users"></i> 25K</span>
+                            </div>
+                        </div>
+                        <button class="game-join glass-btn">
+                            <i class="fas fa-plus"></i>
+                            Присоединиться
+                        </button>
+                    </div>
+
+                    <!-- Игра 3 -->
+                    <div class="game-item glass-card">
+                        <div class="game-rank">#3</div>
+                        <div class="game-cover">
+                            <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                                alt="Fortnite">
+                        </div>
+                        <div class="game-details">
+                            <h3>Fortnite</h3>
+                            <div class="game-meta">
+                                <span class="game-category">Батл-рояль</span>
+                                <span class="game-rating">
+                                    <i class="fas fa-star"></i> 4.5
+                                </span>
+                            </div>
+                            <p class="game-description">
+                                Бесплатный батл-рояль с уникальной механикой строительства.
+                            </p>
+                            <div class="game-stats">
+                                <span><i class="fas fa-comments"></i> 980</span>
+                                <span><i class="fas fa-users"></i> 18K</span>
+                            </div>
+                        </div>
+                        <button class="game-join glass-btn">
+                            <i class="fas fa-plus"></i>
+                            Присоединиться
+                        </button>
+                    </div>
+
+                    <!-- Игра 4 -->
+                    <div class="game-item glass-card">
+                        <div class="game-rank">#4</div>
+                        <div class="game-cover">
+                            <img src="https://images.unsplash.com/photo-1538481199705-c710c4e965fc?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                                alt="Minecraft">
+                        </div>
+                        <div class="game-details">
+                            <h3>Minecraft</h3>
+                            <div class="game-meta">
+                                <span class="game-category">Песочница</span>
+                                <span class="game-rating">
+                                    <i class="fas fa-star"></i> 4.8
+                                </span>
+                            </div>
+                            <p class="game-description">
+                                Стройте, исследуйте и выживайте в бесконечном мире кубов.
+                            </p>
+                            <div class="game-stats">
+                                <span><i class="fas fa-comments"></i> 1.5K</span>
+                                <span><i class="fas fa-users"></i> 32K</span>
+                            </div>
+                        </div>
+                        <button class="game-join glass-btn">
+                            <i class="fas fa-plus"></i>
+                            Присоединиться
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Последние обсуждения -->
+            <section class="discussions-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-comments"></i> Последние обсуждения</h2>
+                    <a href="#" class="view-all">
+                        Все обсуждения <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                
+                <div class="discussions-list">
+                    <!-- Обсуждение 1 -->
+                    <div class="discussion-item glass-card">
+                        <div class="discussion-header">
+                            <div class="discussion-author">
+                                <div class="author-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="author-info">
+                                    <span class="author-name">Alex_Gamer</span>
+                                    <span class="discussion-time">2 часа назад</span>
+                                </div>
+                            </div>
+                            <div class="discussion-game">
+                                <i class="fas fa-gamepad"></i>
+                                <span>Cyberpunk 2077</span>
+                            </div>
+                        </div>
+                        
+                        <h3 class="discussion-title">
+                            Как пройти сложного босса в акте 3?
+                        </h3>
+                        
+                        <p class="discussion-preview">
+                            Застрял на боссе в миссии "Враг моего врага". Пробовал разные тактики, 
+                            но ничего не помогает. Есть советы?
+                        </p>
+                        
+                        <div class="discussion-footer">
+                            <div class="discussion-stats">
+                                <span><i class="fas fa-comment"></i> 24</span>
+                                <span><i class="fas fa-eye"></i> 156</span>
+                                <span><i class="fas fa-heart"></i> 42</span>
+                            </div>
+                            <button class="discussion-join glass-btn">
+                                <i class="fas fa-reply"></i>
+                                Ответить
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Обсуждение 2 -->
+                    <div class="discussion-item glass-card">
+                        <div class="discussion-header">
+                            <div class="discussion-author">
+                                <div class="author-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="author-info">
+                                    <span class="author-name">ProGamerGirl</span>
+                                    <span class="discussion-time">5 часов назад</span>
+                                </div>
+                            </div>
+                            <div class="discussion-game">
+                                <i class="fas fa-gamepad"></i>
+                                <span>Valorant</span>
+                            </div>
+                        </div>
+                        
+                        <h3 class="discussion-title">
+                            Ищем команду для участия в турнире
+                        </h3>
+                        
+                        <p class="discussion-preview">
+                            Формируем команду для участия в локальном турнире по Valorant. 
+                            Нужны игроки ранга Diamond и выше. Пишите в ЛС!
+                        </p>
+                        
+                        <div class="discussion-footer">
+                            <div class="discussion-stats">
+                                <span><i class="fas fa-comment"></i> 47</span>
+                                <span><i class="fas fa-eye"></i> 289</span>
+                                <span><i class="fas fa-heart"></i> 68</span>
+                            </div>
+                            <button class="discussion-join glass-btn">
+                                <i class="fas fa-reply"></i>
+                                Ответить
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Обсуждение 3 -->
+                    <div class="discussion-item glass-card">
+                        <div class="discussion-header">
+                            <div class="discussion-author">
+                                <div class="author-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="author-info">
+                                    <span class="author-name">BuilderMike</span>
+                                    <span class="discussion-time">1 день назад</span>
+                                </div>
+                            </div>
+                            <div class="discussion-game">
+                                <i class="fas fa-gamepad"></i>
+                                <span>Minecraft</span>
+                            </div>
+                        </div>
+                        
+                        <h3 class="discussion-title">
+                            Показываю свою постройку - средневековый замок
+                        </h3>
+                        
+                        <p class="discussion-preview">
+                            Потратил 2 месяца на строительство замка в средневековом стиле. 
+                            Внутри есть тайные комнаты и ловушки. Скриншоты внутри.
+                        </p>
+                        
+                        <div class="discussion-footer">
+                            <div class="discussion-stats">
+                                <span><i class="fas fa-comment"></i> 89</span>
+                                <span><i class="fas fa-eye"></i> 542</span>
+                                <span><i class="fas fa-heart"></i> 124</span>
+                            </div>
+                            <button class="discussion-join glass-btn">
+                                <i class="fas fa-reply"></i>
+                                Ответить
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Обсуждение 4 -->
+                    <div class="discussion-item glass-card">
+                        <div class="discussion-header">
+                            <div class="discussion-author">
+                                <div class="author-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="author-info">
+                                    <span class="author-name">SoulsMaster</span>
+                                    <span class="discussion-time">2 дня назад</span>
+                                </div>
+                            </div>
+                            <div class="discussion-game">
+                                <i class="fas fa-gamepad"></i>
+                                <span>Elden Ring</span>
+                            </div>
+                        </div>
+                        
+                        <h3 class="discussion-title">
+                            Гайд по сборке мага для новичков
+                        </h3>
+                        
+                        <p class="discussion-preview">
+                            Подробный гайд по созданию эффективной магической сборки с нуля. 
+                            Статы, заклинания, снаряжение и тактика против боссов.
+                        </p>
+                        
+                        <div class="discussion-footer">
+                            <div class="discussion-stats">
+                                <span><i class="fas fa-comment"></i> 156</span>
+                                <span><i class="fas fa-eye"></i> 845</span>
+                                <span><i class="fas fa-heart"></i> 267</span>
+                            </div>
+                            <button class="discussion-join glass-btn">
+                                <i class="fas fa-reply"></i>
+                                Ответить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Преимущества -->
+            <section class="features-section">
+                <h2 class="section-title">Почему GameForum?</h2>
+                
+                <div class="features-grid">
+                    <div class="feature-item glass-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3>Активное сообщество</h3>
+                        <p>Более 1.2 миллиона активных участников ежедневно обсуждают игры</p>
+                    </div>
+                    
+                    <div class="feature-item glass-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-gamepad"></i>
+                        </div>
+                        <h3>5000+ игр</h3>
+                        <p>Обширный каталог игр от AAA-хитов до инди-проектов</p>
+                    </div>
+                    
+                    <div class="feature-item glass-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3>Безопасность</h3>
+                        <p>Модерация 24/7 и продвинутая система защиты от спама</p>
+                    </div>
+                    
+                    <div class="feature-item glass-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3>Мобильный доступ</h3>
+                        <p>Удобное приложение для iOS и Android для общения на ходу</p>
+                    </div>
+                    
+                    <div class="feature-item glass-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <h3>Турниры и события</h3>
+                        <p>Регулярные турниры, ивенты и розыгрыши призов</p>
+                    </div>
+                    
+                    <div class="feature-item glass-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <h3>Поддержка 24/7</h3>
+                        <p>Круглосуточная техническая поддержка и помощь</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CTA секция -->
+            <section class="cta-section glass-panel">
+                <div class="cta-content">
+                    <h2>Присоединяйся к крупнейшему игровому сообществу!</h2>
+                    <p>Создай аккаунт и начни общаться с геймерами со всего мира</p>
+                    <div class="cta-buttons">
+                        <button class="cta-btn-primary glass-btn" id="ctaRegisterBtn">
+                            <i class="fas fa-user-plus"></i>
+                            Создать аккаунт
+                        </button>
+                        <button class="cta-btn-secondary glass-btn">
+                            <i class="fas fa-play-circle"></i>
+                            Смотреть турниры
+                        </button>
+                    </div>
+                </div>
+                <div class="cta-image">
+                    <div class="cta-stats">
+                        <div class="cta-stat">
+                            <span class="cta-stat-number">1,247</span>
+                            <span class="cta-stat-label">Игроков онлайн</span>
+                        </div>
+                        <div class="cta-stat">
+                            <span class="cta-stat-number">89</span>
+                            <span class="cta-stat-label">Новых тем за час</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Футер -->
+    <div id="footer"></div>
+
+    <script src="../static/js/script.js"></script>
+    <script>
+        // Загрузка хедера и футера
+    document.addEventListener('DOMContentLoaded', function() {
+        // Загружаем хедер
+        fetch('fragments/header.html')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Не удалось загрузить хедер');
+                }
+                return response.text();
+            })
+            .then(data => {
+                document.getElementById('header').innerHTML = data;
+                console.log('Хедер загружен');
+                // Инициализируем скрипты после загрузки хедера
+                if (typeof initializeHeader === 'function') {
+                    initializeHeader();
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки хедера:', error);
+                document.getElementById('header').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки хедера</div>';
+            });
+
+        // Загружаем футер
+        fetch('fragments/footer.html')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Не удалось загрузить футер');
+                }
+                return response.text();
+            })
+            .then(data => {
+                document.getElementById('footer').innerHTML = data;
+                console.log('Футер загружен');
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки футера:', error);
+                document.getElementById('footer').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки футера</div>';
+            });
+
+        // Инициализация основных скриптов
+        initializeMainScripts();
+    });
+
+
+        function initializeMainScripts() {
+            // Кнопка "Присоединиться" в герое
+            const joinBtn = document.getElementById('joinBtn');
+            if (joinBtn) {
+                joinBtn.addEventListener('click', function() {
+                    // Открываем модальное окно регистрации
+                    if (typeof openModal === 'function') {
+                        const registerModal = document.getElementById('registerModal');
+                        if (registerModal) {
+                            openModal(registerModal);
+                        } else {
+                            console.error('Модальное окно регистрации не найдено');
+                            showNotification('Пожалуйста, войдите или зарегистрируйтесь', 'info');
+                        }
+                    }
+                });
+            }
+
+            // Кнопки "Присоединиться" в карточках игр
+            const gameJoinBtns = document.querySelectorAll('.game-join');
+            gameJoinBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const gameTitle = this.closest('.game-item').querySelector('h3').textContent;
+                    showNotification(`Вы присоединились к сообществу "${gameTitle}"!`, 'success');
+                });
+            });
+
+            // Кнопки "Ответить" в обсуждениях
+            const discussionJoinBtns = document.querySelectorAll('.discussion-join');
+            discussionJoinBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const discussionTitle = this.closest('.discussion-item').querySelector('.discussion-title').textContent;
+                    showNotification(`Откройте обсуждение "${discussionTitle}" чтобы ответить`, 'info');
+                });
+            });
+
+            // CTA кнопка регистрации
+            const ctaRegisterBtn = document.getElementById('ctaRegisterBtn');
+            if (ctaRegisterBtn) {
+                ctaRegisterBtn.addEventListener('click', function() {
+                    if (typeof openModal === 'function') {
+                        const registerModal = document.getElementById('registerModal');
+                        if (registerModal) {
+                            openModal(registerModal);
+                        } else {
+                            showNotification('Пожалуйста, войдите или зарегистрируйтесь', 'info');
+                        }
+                    }
+                });
+            }
+
+            // Функция для отображения уведомлений
+            function showNotification(message, type = 'info') {
+                // Используем функцию из script.js
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification(message, type);
+                } else {
+                    // Запасной вариант
+                    alert(message);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
