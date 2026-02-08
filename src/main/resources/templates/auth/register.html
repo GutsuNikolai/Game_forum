@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - GameForum</title>
+    
+    <!-- Стили -->
+    <link rel="stylesheet" href="/static/css/register.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Заголовок -->
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i class="fas fa-gamepad"></i>
+                    <span>GameForum</span>
+                </div>
+                <h1 class="auth-title">Создать аккаунт</h1>
+                <p class="auth-subtitle">Присоединяйтесь к сообществу геймеров!</p>
+            </div>
+
+            <!-- Форма регистрации -->
+            <form class="auth-form" id="registerForm">
+                <!-- Имя пользователя -->
+                <div class="form-group">
+                    <div class="input-with-icon">
+                        <div class="input-icon">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <input type="text" 
+                               id="username" 
+                               name="username" 
+                               placeholder="Имя пользователя" 
+                               required
+                               autocomplete="username">
+                        <div class="error-message" id="usernameError"></div>
+                        <div class="success-message" id="usernameSuccess"></div>
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="form-group">
+                    <div class="input-with-icon">
+                        <div class="input-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <input type="email" 
+                               id="email" 
+                               name="email" 
+                               placeholder="Email" 
+                               required
+                               autocomplete="email">
+                        <div class="error-message" id="emailError"></div>
+                    </div>
+                </div>
+
+                <!-- Пароль -->
+                <div class="form-group">
+                    <div class="input-with-icon">
+                        <div class="input-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <input type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Пароль" 
+                            required
+                            autocomplete="new-password">
+                        <button type="button" class="password-toggle" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Вынести всё остальное ВНЕ input-with-icon -->
+                    <div class="error-message" id="passwordError"></div>
+                    
+                    <!-- Индикатор сложности пароля -->
+                    <div class="password-strength">
+                        <span>Сложность пароля:</span>
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strengthFill"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Критерии пароля -->
+                    <div class="password-criteria">
+                        <div class="criterion" id="lengthCriterion">
+                            <i class="fas fa-circle"></i>
+                            <span>Минимум 8 символов</span>
+                        </div>
+                        <div class="criterion" id="uppercaseCriterion">
+                            <i class="fas fa-circle"></i>
+                            <span>Хотя бы одна заглавная буква</span>
+                        </div>
+                        <div class="criterion" id="numberCriterion">
+                            <i class="fas fa-circle"></i>
+                            <span>Хотя бы одна цифра</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Подтверждение пароля -->
+                <div class="form-group">
+                    <div class="input-with-icon">
+                        <div class="input-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <input type="password" 
+                               id="confirmPassword" 
+                               name="confirmPassword" 
+                               placeholder="Подтвердите пароль" 
+                               required
+                               autocomplete="new-password">
+                        <button type="button" class="password-toggle" id="toggleConfirmPassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <div class="error-message" id="confirmPasswordError"></div>
+                    </div>
+                </div>
+
+                <!-- Соглашение -->
+                <div class="terms-agreement">
+                    <input type="checkbox" id="agreeTerms" required>
+                    <label for="agreeTerms">
+                        Я согласен с <a href="#">правилами сообщества</a> и 
+                        <a href="#">политикой конфиденциальности</a>
+                    </label>
+                </div>
+
+                <!-- Кнопка регистрации -->
+                <button type="submit" class="auth-btn" id="submitBtn">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Зарегистрироваться</span>
+                </button>
+            </form>
+
+            <!-- Ссылка на вход -->
+            <div class="auth-footer">
+                <p>Уже есть аккаунт? <a href="/templates/auth/login.html">Войти</a></p>
+                <p style="margin-top: 15px;">
+                    <a href="/templates/home.html">
+                        <i class="fas fa-arrow-left"></i> Вернуться на главную
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Элементы формы
+            const usernameInput = document.getElementById('username');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const registerForm = document.getElementById('registerForm');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            // Проверка доступности имени пользователя
+            let usernameTimeout;
+            usernameInput.addEventListener('input', function() {
+                clearTimeout(usernameTimeout);
+                const username = this.value.trim();
+                
+                if (username.length >= 3) {
+                    usernameTimeout = setTimeout(() => {
+                        checkUsernameAvailability(username);
+                    }, 500);
+                }
+            });
+            
+            // Проверка сложности пароля
+            passwordInput.addEventListener('input', function() {
+                checkPasswordStrength(this.value);
+            });
+            
+            // Проверка совпадения паролей
+            confirmPasswordInput.addEventListener('input', function() {
+                checkPasswordMatch();
+            });
+            
+            // Переключение видимости паролей
+            setupPasswordToggle('togglePassword', 'password');
+            setupPasswordToggle('toggleConfirmPassword', 'confirmPassword');
+            
+            // Обработка отправки формы
+            if (registerForm) {
+                registerForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    if (validateForm()) {
+                        registerUser();
+                    }
+                });
+            }
+            
+            // Функции
+            function setupPasswordToggle(toggleId, inputId) {
+                const toggle = document.getElementById(toggleId);
+                const input = document.getElementById(inputId);
+                
+                if (toggle && input) {
+                    toggle.addEventListener('click', function() {
+                        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                        input.setAttribute('type', type);
+                        
+                        const icon = this.querySelector('i');
+                        icon.classList.toggle('fa-eye');
+                        icon.classList.toggle('fa-eye-slash');
+                    });
+                }
+            }
+            
+            function checkUsernameAvailability(username) {
+                // Имитация проверки на сервере
+                fetch(`/api/auth/check-username?username=${encodeURIComponent(username)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const errorEl = document.getElementById('usernameError');
+                        const successEl = document.getElementById('usernameSuccess');
+                        
+                        if (data.available) {
+                            errorEl.style.display = 'none';
+                            successEl.textContent = '✓ Имя пользователя доступно';
+                            successEl.style.display = 'block';
+                        } else {
+                            successEl.style.display = 'none';
+                            errorEl.textContent = '✗ Имя пользователя уже занято';
+                            errorEl.style.display = 'block';
+                        }
+                    })
+                    .catch(() => {
+                        // Для демо пропускаем ошибку
+                    });
+            }
+            
+            function checkPasswordStrength(password) {
+                // Критерии
+                const hasLength = password.length >= 8;
+                const hasUppercase = /[A-Z]/.test(password);
+                const hasNumber = /\d/.test(password);
+                
+                // Обновляем иконки критериев
+                updateCriterion('lengthCriterion', hasLength);
+                updateCriterion('uppercaseCriterion', hasUppercase);
+                updateCriterion('numberCriterion', hasNumber);
+                
+                // Рассчитываем сложность
+                let strength = 0;
+                if (hasLength) strength++;
+                if (hasUppercase) strength++;
+                if (hasNumber) strength++;
+                
+                // Обновляем индикатор
+                const strengthFill = document.getElementById('strengthFill');
+                if (strengthFill) {
+                    const width = (strength / 3) * 100;
+                    strengthFill.style.width = `${width}%`;
+                    
+                    // Цвет индикатора
+                    strengthFill.className = 'strength-fill';
+                    if (strength === 1) strengthFill.classList.add('strength-weak');
+                    else if (strength === 2) strengthFill.classList.add('strength-medium');
+                    else if (strength === 3) strengthFill.classList.add('strength-strong');
+                }
+            }
+            
+            function updateCriterion(id, met) {
+                const criterion = document.getElementById(id);
+                if (criterion) {
+                    criterion.className = met ? 'criterion met' : 'criterion unmet';
+                    criterion.querySelector('i').className = met ? 'fas fa-check-circle' : 'fas fa-times-circle';
+                }
+            }
+            
+            function checkPasswordMatch() {
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+                const errorEl = document.getElementById('confirmPasswordError');
+                
+                if (confirmPassword && password !== confirmPassword) {
+                    errorEl.textContent = 'Пароли не совпадают';
+                    errorEl.style.display = 'block';
+                    return false;
+                } else {
+                    errorEl.style.display = 'none';
+                    return true;
+                }
+            }
+            
+            function validateForm() {
+                let isValid = true;
+                
+                // Сброс ошибок
+                document.querySelectorAll('.error-message').forEach(el => {
+                    el.style.display = 'none';
+                });
+                
+                // Проверка имени пользователя
+                const username = usernameInput.value.trim();
+                if (!username) {
+                    showError('usernameError', 'Введите имя пользователя');
+                    isValid = false;
+                } else if (username.length < 3) {
+                    showError('usernameError', 'Минимум 3 символа');
+                    isValid = false;
+                }
+                
+                // Проверка email
+                const email = emailInput.value.trim();
+                if (!email) {
+                    showError('emailError', 'Введите email');
+                    isValid = false;
+                } else if (!isValidEmail(email)) {
+                    showError('emailError', 'Введите корректный email');
+                    isValid = false;
+                }
+                
+                // Проверка пароля
+                const password = passwordInput.value;
+                if (!password) {
+                    showError('passwordError', 'Введите пароль');
+                    isValid = false;
+                } else if (password.length < 8) {
+                    showError('passwordError', 'Минимум 8 символов');
+                    isValid = false;
+                }
+                
+                // Проверка совпадения паролей
+                if (!checkPasswordMatch()) {
+                    isValid = false;
+                }
+                
+                // Проверка соглашения
+                if (!document.getElementById('agreeTerms').checked) {
+                    alert('Примите условия соглашения');
+                    isValid = false;
+                }
+                
+                return isValid;
+            }
+            
+            function showError(elementId, message) {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.textContent = message;
+                    element.style.display = 'block';
+                }
+            }
+            
+            function isValidEmail(email) {
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+            }
+            
+            function registerUser() {
+                const userData = {
+                    username: usernameInput.value.trim(),
+                    email: emailInput.value.trim(),
+                    password: passwordInput.value
+                };
+                
+                // Показываем индикатор загрузки
+                const originalHTML = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Регистрация...</span>';
+                submitBtn.disabled = true;
+                
+                // Отправляем запрос
+                fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    return response.json().then(err => { throw err; });
+                })
+                .then(data => {
+                    // Успешная регистрация
+                    showNotification('Регистрация успешна!', 'success');
+                    
+                    // Сохраняем токен
+                    if (data.token) {
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('username', userData.username);
+                        
+                        // Перенаправляем на главную через 2 секунды
+                        setTimeout(() => {
+                            window.location.href = '/home.html';
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    // Обработка ошибок
+                    let errorMessage = 'Ошибка регистрации';
+                    
+                    if (error.message) {
+                        errorMessage = error.message;
+                    } else if (error.username) {
+                        showError('usernameError', error.username);
+                    } else if (error.email) {
+                        showError('emailError', error.email);
+                    }
+                    
+                    showNotification(errorMessage, 'error');
+                    
+                    submitBtn.innerHTML = originalHTML;
+                    submitBtn.disabled = false;
+                });
+            }
+            
+            function showNotification(message, type) {
+                // Создаем уведомление
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.innerHTML = `
+                    <i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
+                    <span>${message}</span>
+                `;
+                
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 15px 20px;
+                    background: ${type === 'error' ? 'rgba(255, 107, 107, 0.9)' : 'rgba(107, 207, 127, 0.9)'};
+                    color: white;
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    z-index: 1000;
+                    animation: slideIn 0.3s ease;
+                `;
+                
+                document.body.appendChild(notification);
+                
+                // Удаляем через 4 секунды
+                setTimeout(() => {
+                    notification.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            document.body.removeChild(notification);
+                        }
+                    }, 300);
+                }, 4000);
+            }
+            
+            // Добавляем стили для анимации
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>

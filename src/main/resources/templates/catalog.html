@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Каталог игр - GameForum</title>
+    
+    <!-- Стили -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/catalog.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+</head>
+<body class="catalog-page">
+    <!-- Хедер -->
+    <div id="header"></div>
+    
+    <!-- Основной контент -->
+    <main>
+        <!-- Заголовок страницы -->
+        <section class="page-header">
+            <h1 class="page-title">Каталог игр</h1>
+            <p class="page-subtitle">Ищите игры по жанрам, обсуждайте с сообществом, делитесь опытом и находите единомышленников</p>
+        </section>
+        
+        <!-- Поиск и фильтры -->
+        <section class="search-filter">
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Поиск игр..." id="gameSearch">
+            </div>
+            
+            <div class="filter-tags">
+                <span class="filter-tag active" data-filter="all">Все игры</span>
+                <span class="filter-tag" data-filter="shooter">Шутеры</span>
+                <span class="filter-tag" data-filter="rpg">RPG</span>
+                <span class="filter-tag" data-filter="strategy">Стратегии</span>
+                <span class="filter-tag" data-filter="adventure">Приключения</span>
+                <span class="filter-tag" data-filter="sports">Спортивные</span>
+                <span class="filter-tag" data-filter="simulator">Симуляторы</span>
+            </div>
+        </section>
+        
+        <!-- Сетка игр -->
+        <section class="games-container">
+            <div class="games-grid" id="gamesGrid">
+                <!-- Игры будут загружены через JavaScript -->
+            </div>
+            
+            <div class="empty-state" id="noGames" style="display: none;">
+                <i class="fas fa-gamepad"></i>
+                <h3>Игры не найдены</h3>
+                <p>Попробуйте изменить параметры поиска</p>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Футер -->
+    <div id="footer"></div>
+    
+    <!-- Скрипты -->
+    <script>
+
+        // Загрузка хедера и футера
+    document.addEventListener('DOMContentLoaded', function() {
+        // Загружаем хедер
+        fetch('fragments/header.html')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Не удалось загрузить хедер');
+                }
+                return response.text();
+            })
+            .then(data => {
+                document.getElementById('header').innerHTML = data;
+                console.log('Хедер загружен');
+                // Инициализируем скрипты после загрузки хедера
+                if (typeof initializeHeader === 'function') {
+                    initializeHeader();
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки хедера:', error);
+                document.getElementById('header').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки хедера</div>';
+            });
+
+        // Загружаем футер
+        fetch('fragments/footer.html')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Не удалось загрузить футер');
+                }
+                return response.text();
+            })
+            .then(data => {
+                document.getElementById('footer').innerHTML = data;
+                console.log('Футер загружен');
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки футера:', error);
+                document.getElementById('footer').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки футера</div>';
+            });
+
+            initializeMainScripts();
+    });
+
+        // Массив с играми
+        const games = [
+            {
+                id: 1,
+                title: "Cyberpunk 2077",
+                description: "Приключенческая ролевая игра в открытом мире, действие которой происходит в мегаполисе Найт-Сити.",
+                image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                rating: 4.2,
+                genre: "rpg",
+                topics: 1250
+            },
+            {
+                id: 2,
+                title: "Call of Duty: Warzone",
+                description: "Бесплатный королевский бой на 150 игроков в мире Modern Warfare.",
+                image: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                rating: 4.5,
+                genre: "shooter",
+                topics: 3200
+            },
+            {
+                id: 3,
+                title: "The Witcher 3: Wild Hunt",
+                description: "Эпическая ролевая игра о ведьмаке Геральте из Ривии в огромном открытом мире.",
+                image: "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                rating: 4.8,
+                genre: "rpg",
+                topics: 2800
+            },
+            {
+                id: 4,
+                title: "Dota 2",
+                description: "Бесплатная многопользовательская стратегия в реальном времени с миллионами игроков по всему миру.",
+                image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                rating: 4.3,
+                genre: "strategy",
+                topics: 4500
+            },
+            {
+                id: 5,
+                title: "FIFA 23",
+                description: "Самый реалистичный футбольный симулятор с улучшенной графикой и игровым процессом.",
+                image: "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                rating: 4.0,
+                genre: "sports",
+                topics: 1800
+            },
+            {
+                id: 6,
+                title: "Microsoft Flight Simulator",
+                description: "Самый реалистичный симулятор полётов с детализированной картой всей планеты.",
+                image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                rating: 4.6,
+                genre: "simulator",
+                topics: 950
+            }
+        ];
+        
+        // Функция для генерации звезд рейтинга
+        function generateStars(rating) {
+            let stars = '';
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 >= 0.5;
+            
+            for (let i = 1; i <= 5; i++) {
+                if (i <= fullStars) {
+                    stars += '<i class="fas fa-star"></i>';
+                } else if (i === fullStars + 1 && hasHalfStar) {
+                    stars += '<i class="fas fa-star-half-alt"></i>';
+                } else {
+                    stars += '<i class="far fa-star"></i>';
+                }
+            }
+            return stars;
+        }
+        
+        // Функция для отображения игр
+        function renderGames(gamesToRender) {
+            const gamesGrid = document.getElementById('gamesGrid');
+            const noGames = document.getElementById('noGames');
+            
+            gamesGrid.innerHTML = '';
+            
+            if (gamesToRender.length === 0) {
+                noGames.style.display = 'block';
+                return;
+            }
+            
+            noGames.style.display = 'none';
+            
+            gamesToRender.forEach(game => {
+                const gameCard = document.createElement('div');
+                gameCard.className = 'game-card';
+                gameCard.dataset.id = game.id;
+                gameCard.dataset.genre = game.genre;
+                
+                // Названия жанров для отображения
+                const genreNames = {
+                    'shooter': 'Шутер',
+                    'rpg': 'RPG',
+                    'strategy': 'Стратегия',
+                    'adventure': 'Приключение',
+                    'sports': 'Спорт',
+                    'simulator': 'Симулятор'
+                };
+                
+                gameCard.innerHTML = `
+                    <img src="${game.image}" alt="${game.title}" class="game-image" onerror="this.src='https://images.unsplash.com/photo-1552820728-8b83bb6b773f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'">
+                    <div class="game-info">
+                        <span class="game-genre">${genreNames[game.genre] || game.genre}</span>
+                        <h3 class="game-title">${game.title}</h3>
+                        <p class="game-description">${game.description}</p>
+                        <div class="game-meta">
+                            <div class="game-rating">
+                                <div class="rating-stars">
+                                    ${generateStars(game.rating)}
+                                </div>
+                                <span class="rating-value">${game.rating.toFixed(1)}</span>
+                            </div>
+                            <div class="game-topics">
+                                <i class="fas fa-comments"></i>
+                                ${game.topics.toLocaleString()} тем
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Добавляем обработчик клика
+                gameCard.addEventListener('click', () => {
+                    openGameTopics(game.id, game.title);
+                });
+                
+                gamesGrid.appendChild(gameCard);
+            });
+        }
+        
+        // Функция для открытия страницы с темами игры
+        function openGameTopics(gameId, gameTitle) {
+            // Сохраняем данные игры в sessionStorage
+            sessionStorage.setItem('currentGameId', gameId);
+            sessionStorage.setItem('currentGameTitle', gameTitle);
+            
+            // Переходим на страницу тем
+            window.location.href = `game-topics.html?game=${gameId}`;
+        }
+        
+        // Функция для фильтрации игр
+        function filterGames() {
+            const searchTerm = document.getElementById('gameSearch').value.toLowerCase();
+            const activeFilter = document.querySelector('.filter-tag.active')?.dataset.filter || 'all';
+            
+            let filteredGames = games;
+            
+            // Применяем поиск
+            if (searchTerm) {
+                filteredGames = filteredGames.filter(game => 
+                    game.title.toLowerCase().includes(searchTerm) || 
+                    game.description.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Применяем фильтр по жанру
+            if (activeFilter !== 'all') {
+                filteredGames = filteredGames.filter(game => game.genre === activeFilter);
+            }
+            
+            renderGames(filteredGames);
+        }
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            // Отображаем все игры при загрузке
+            renderGames(games);
+            
+            // Обработчик поиска
+            document.getElementById('gameSearch').addEventListener('input', filterGames);
+            
+            // Обработчики фильтров
+            document.querySelectorAll('.filter-tag').forEach(tag => {
+                tag.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    filterGames();
+                });
+            });
+            
+            // Загружаем хедер и футер
+            loadHeaderAndFooter();
+        });
+        
+        // Функция загрузки хедера и футера
+        function loadHeaderAndFooter() {
+            // Загружаем хедер
+            fetch('/fragments/header.html')
+                .then(response => {
+                    if (!response.ok) throw new Error('Не удалось загрузить хедер');
+                    return response.text();
+                })
+                .then(html => {
+                    document.getElementById('header').innerHTML = html;
+                    console.log('Хедер загружен в каталоге');
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки хедера:', error);
+                    document.getElementById('header').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки хедера</div>';
+                });
+            
+            // Загружаем футер
+            fetch('/fragments/footer.html')
+                .then(response => {
+                    if (!response.ok) throw new Error('Не удалось загрузить футер');
+                    return response.text();
+                })
+                .then(html => {
+                    document.getElementById('footer').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки футера:', error);
+                    document.getElementById('footer').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки футера</div>';
+                });
+        }
+    </script>
+</body>
+</html>
