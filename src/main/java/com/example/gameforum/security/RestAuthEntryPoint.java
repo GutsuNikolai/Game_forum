@@ -1,4 +1,4 @@
-package com.example.gameforum.common;
+package com.example.gameforum.security;
 
 import com.example.gameforum.common.ApiError;
 import com.fasterxml.jackson.databind.ObjectMapper;

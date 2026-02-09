@@ -14,6 +14,10 @@ public class PublisherReviewController {
 
     private final ReviewService service;
 
+    public PublisherReviewController(ReviewService service) {
+        this.service = service;
+    }
+
     @GetMapping
     public ReviewView get(@PathVariable String slug) {
         return service.getAny(slug);

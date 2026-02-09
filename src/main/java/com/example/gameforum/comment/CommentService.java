@@ -2,6 +2,7 @@ package com.example.gameforum.comment;
 
 import com.example.gameforum.comment.dto.CommentView;
 import com.example.gameforum.comment.dto.CreateCommentRequest;
+import com.example.gameforum.common.NotFoundException;
 import com.example.gameforum.game.GameEntity;
 import com.example.gameforum.game.GameRepository;
 import com.example.gameforum.user.UserEntity;
@@ -32,8 +33,8 @@ public class CommentService {
     }
 
     public CommentView create(String slug, String username, CreateCommentRequest req) {
-        GameEntity game = games.findBySlug(slug).orElseThrow(() -> new IllegalArgumentException("Game not found"));
-        UserEntity user = users.findByUsername(username).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        GameEntity game = games.findBySlug(slug).orElseThrow(() -> new NotFoundException("Game not found"));
+        UserEntity user = users.findByUsername(username).orElseThrow(() -> new NotFoundException("User not found"));
 
         CommentEntity c = CommentEntity.builder()
                 .game(game)

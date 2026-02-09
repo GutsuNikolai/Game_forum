@@ -1,5 +1,6 @@
 package com.example.gameforum.game;
 
+import com.example.gameforum.common.NotFoundException;
 import com.example.gameforum.game.dto.GameDetails;
 import com.example.gameforum.game.dto.GameListItem;
 import com.example.gameforum.review.ReviewService;
@@ -7,6 +8,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
+import com.example.gameforum.game.dto.CreateGameRequest;
+import com.example.gameforum.game.dto.UpdateGameRequest;
+import jakarta.transaction.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.OffsetDateTime;
 @Service
 @RequiredArgsConstructor
 public class GameService {
@@ -29,7 +37,7 @@ public class GameService {
 
     public GameDetails getBySlug(String slug) {
         GameEntity g = games.findBySlug(slug)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+                .orElseThrow(() -> new NotFoundException("Game not found"));
         
         return new GameDetails(
                 g.getSlug(),
@@ -40,5 +48,38 @@ public class GameService {
                 g.getRatingCnt() == null ? 0 : g.getRatingCnt(),
                 reviews.getPublished(slug)
         );
+    }
+
+    @Transactional
+    public void createGame(CreateGameRequest req) {
+        String slug = req.slug().trim().toLowerCase();
+        if (games.existsBySlug(slug)) throw new IllegalArgumentException("Slug already exists");
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        GameEntity g = GameEntity.builder()
+                .slug(slug)
+                .title(req.title().trim())
+                .description(req.description() == null ? "" : req.description().trim())
+                .coverUrl(req.coverUrl() == null ? "" : req.coverUrl().trim())
+                .createdAt(now)
+                .updatedAt(now)
+                .ratingAvg(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP))
+                .ratingCnt(0)
+                .build();
+
+        games.save(g);
+    }
+
+    @Transactional
+    public void updateGame(String slug, UpdateGameRequest req) {
+        GameEntity g = games.findBySlug(slug).orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        if (req.title() != null) g.setTitle(req.title().trim());
+        if (req.description() != null) g.setDescription(req.description().trim());
+        if (req.coverUrl() != null) g.setCoverUrl(req.coverUrl().trim());
+        g.setUpdatedAt(OffsetDateTime.now());
+
+        games.save(g);
     }
 }

@@ -14,6 +14,10 @@ public class RatingController {
 
     private final RatingService service;
 
+    public RatingController(RatingService service) {
+        this.service = service;
+    }
+
     @PostMapping
     public RatingResult set(@PathVariable String slug,
                             @Valid @RequestBody SetRatingRequest req,
