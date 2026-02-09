@@ -1,0 +1,128 @@
+<!-- Хедер в стиле стекла -->
+<header class="header glass-header">
+    <div class="header-container">
+        <!-- Логотип -->
+        <div class="logo">
+            <a href="home.html" class="logo-link">
+                <div class="logo-icon">
+                    <i class="fas fa-gamepad"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">GameForum</span>
+                    <span class="logo-subtitle">Gaming Community</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Навигация -->
+        <nav class="nav">
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a href="home.html" class="nav-link">
+                        <div class="nav-icon">
+                            <i class="fas fa-home"></i>
+                        </div>
+                        <span class="nav-text">Главная</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="catalog.html" class="nav-link">
+                        <div class="nav-icon">
+                            <i class="fas fa-gamepad"></i>
+                        </div>
+                        <span class="nav-text">Каталог игр</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Кнопки авторизации (ЗАМЕНА КНОПОК НА ССЫЛКИ) -->
+        <div class="auth-buttons nav-item">
+            <div class="auth-container nav-link">
+                <!-- Ссылка на страницу входа -->
+                <a href="auth/login.html" class="fas fa-users auth-btn login-btn glass-btn" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Войти</span>
+                </a>
+                <!-- Ссылка на страницу регистрации -->
+                <a href="auth/register.html" class="auth-btn register-btn glass-btn" id="registerBtn">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Регистрация</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Профиль (скрыт по умолчанию) -->
+        <div class="user-profile" id="userProfile" style="display: none;">
+            <div class="profile-menu glass-card">
+                <div class="profile-info">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="profile-details">
+                        <span class="profile-name">Игрок</span>
+                        <span class="profile-level">Уровень 1</span>
+                    </div>
+                </div>
+                <button class="profile-logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Выйти
+                </button>
+            </div>
+        </div>
+
+        <!-- Мобильное меню -->
+        <button class="menu-toggle glass-btn" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+</header>
+
+<!-- Мобильное меню (стекло) -->
+<div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    <div class="mobile-menu-content glass-panel">
+        <div class="mobile-menu-header">
+            <div class="mobile-logo">
+                <i class="fas fa-gamepad"></i>
+                <span>GameForum</span>
+            </div>
+            <button class="close-menu glass-btn" id="closeMenu">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="mobile-nav">
+            <a href="home.html" class="mobile-nav-link glass-card">
+                <i class="fas fa-home"></i>
+                <span>Главная</span>
+            </a>
+            <a href="catalog.html" class="mobile-nav-link glass-card">
+                <i class="fas fa-gamepad"></i>
+                <span>Каталог игр</span>
+            </a>
+            <a href="#" class="mobile-nav-link glass-card">
+                <i class="fas fa-comments"></i>
+                <span>Форум</span>
+            </a>
+            <a href="#" class="mobile-nav-link glass-card">
+                <i class="fas fa-users"></i>
+                <span>Сообщество</span>
+            </a>
+        </div>
+        
+        <div class="mobile-auth">
+            <!-- Ссылки в мобильном меню тоже -->
+            <a href="auth/login.html" class="mobile-auth-btn login glass-card" id="mobileLoginBtn">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Войти</span>
+            </a>
+            <a href="auth/register.html" class="mobile-auth-btn register glass-card" id="mobileRegisterBtn">
+                <i class="fas fa-user-plus"></i>
+                <span>Регистрация</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- УДАЛИТЬ МОДАЛЬНЫЕ ОКНА (больше не нужны в хедере) -->
