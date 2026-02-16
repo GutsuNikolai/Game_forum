@@ -3,7 +3,7 @@
     <div class="header-container">
         <!-- Логотип -->
         <div class="logo">
-            <a href="home.html" class="logo-link">
+            <a href="/home.html" class="logo-link">
                 <div class="logo-icon">
                     <i class="fas fa-gamepad"></i>
                 </div>
@@ -18,7 +18,7 @@
         <nav class="nav">
             <ul class="nav-list">
                 <li class="nav-item">
-                    <a href="home.html" class="nav-link">
+                    <a href="/home.html" class="nav-link">
                         <div class="nav-icon">
                             <i class="fas fa-home"></i>
                         </div>
@@ -26,7 +26,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="catalog.html" class="nav-link">
+                    <a href="/catalog.html" class="nav-link">
                         <div class="nav-icon">
                             <i class="fas fa-gamepad"></i>
                         </div>
@@ -40,12 +40,12 @@
         <div class="auth-buttons nav-item">
             <div class="auth-container nav-link">
                 <!-- Ссылка на страницу входа -->
-                <a href="auth/login.html" class="fas fa-users auth-btn login-btn glass-btn" id="loginBtn">
+                <a href="/auth/login.html" class="auth-btn login-btn glass-btn" id="loginBtn">
                     <i class="fas fa-sign-in-alt"></i>
                     <span>Войти</span>
                 </a>
                 <!-- Ссылка на страницу регистрации -->
-                <a href="auth/register.html" class="auth-btn register-btn glass-btn" id="registerBtn">
+                <a href="/auth/register.html" class="auth-btn register-btn glass-btn" id="registerBtn">
                     <i class="fas fa-user-plus"></i>
                     <span>Регистрация</span>
                 </a>
@@ -55,16 +55,16 @@
         <!-- Профиль (скрыт по умолчанию) -->
         <div class="user-profile" id="userProfile" style="display: none;">
             <div class="profile-menu glass-card">
-                <div class="profile-info">
-                    <div class="profile-avatar">
+                <div class="header-profile-info">
+                    <div class="header-profile-avatar">
                         <i class="fas fa-user"></i>
                     </div>
-                    <div class="profile-details">
-                        <span class="profile-name">Игрок</span>
-                        <span class="profile-level">Уровень 1</span>
+                    <div class="header-profile-details">
+                        <span class="header-profile-name">Игрок</span>
+                        <span class="header-profile-level">Уровень 1</span>
                     </div>
                 </div>
-                <button class="profile-logout">
+                <button class="header-profile-logout">
                     <i class="fas fa-sign-out-alt"></i>
                     Выйти
                 </button>
@@ -87,37 +87,29 @@
                 <i class="fas fa-gamepad"></i>
                 <span>GameForum</span>
             </div>
-            <button class="close-menu glass-btn" id="closeMenu">
+            <button type="button" class="close-menu glass-btn" id="closeMenu">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         
         <div class="mobile-nav">
-            <a href="home.html" class="mobile-nav-link glass-card">
+            <a href="/home.html" class="mobile-nav-link glass-card">
                 <i class="fas fa-home"></i>
                 <span>Главная</span>
             </a>
-            <a href="catalog.html" class="mobile-nav-link glass-card">
+            <a href="/catalog.html" class="mobile-nav-link glass-card">
                 <i class="fas fa-gamepad"></i>
                 <span>Каталог игр</span>
-            </a>
-            <a href="#" class="mobile-nav-link glass-card">
-                <i class="fas fa-comments"></i>
-                <span>Форум</span>
-            </a>
-            <a href="#" class="mobile-nav-link glass-card">
-                <i class="fas fa-users"></i>
-                <span>Сообщество</span>
             </a>
         </div>
         
         <div class="mobile-auth">
             <!-- Ссылки в мобильном меню тоже -->
-            <a href="auth/login.html" class="mobile-auth-btn login glass-card" id="mobileLoginBtn">
+            <a href="/auth/login.html" class="mobile-auth-btn login glass-card" id="mobileLoginBtn">
                 <i class="fas fa-sign-in-alt"></i>
                 <span>Войти</span>
             </a>
-            <a href="auth/register.html" class="mobile-auth-btn register glass-card" id="mobileRegisterBtn">
+            <a href="/auth/register.html" class="mobile-auth-btn register glass-card" id="mobileRegisterBtn">
                 <i class="fas fa-user-plus"></i>
                 <span>Регистрация</span>
             </a>

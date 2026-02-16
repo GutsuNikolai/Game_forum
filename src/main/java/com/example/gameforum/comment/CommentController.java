@@ -4,13 +4,10 @@ import com.example.gameforum.comment.dto.CommentView;
 import com.example.gameforum.comment.dto.CreateCommentRequest;
 import com.example.gameforum.common.PageResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/games/{slug}/comments")
 public class CommentController {
 

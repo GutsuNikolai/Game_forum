@@ -3,13 +3,10 @@ package com.example.gameforum.game;
 import com.example.gameforum.common.PageResponse;
 import com.example.gameforum.game.dto.GameDetails;
 import com.example.gameforum.game.dto.GameListItem;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/games")
-@RequiredArgsConstructor
 public class GameController {
 
     private final GameService service;

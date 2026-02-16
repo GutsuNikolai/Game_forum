@@ -3,12 +3,10 @@ package com.example.gameforum.rating;
 import com.example.gameforum.rating.dto.RatingResult;
 import com.example.gameforum.rating.dto.SetRatingRequest;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/games/{slug}/rating")
 public class RatingController {
 

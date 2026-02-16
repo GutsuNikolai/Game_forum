@@ -23,9 +23,9 @@
         <section class="discussion-header">
             <div class="topic-header">
                 <div class="breadcrumb">
-                    <a href="catalog.html">Каталог игр</a>
+                    <a href="/catalog.html">Каталог игр</a>
                     <span class="separator">/</span>
-                    <a href="game-topics.html" id="backToTopics">Темы игры</a>
+                    <a href="/game-topics.html" id="backToTopics">Темы игры</a>
                     <span class="separator">/</span>
                     <span id="currentTopic">Обсуждение</span>
                 </div>
@@ -56,16 +56,46 @@
             <div class="reply-form-container" id="replyFormContainer">
                 <h3>Ваш ответ</h3>
                 <form class="reply-form" id="replyForm">
-                    <textarea 
-                        id="replyText" 
-                        placeholder="Напишите ваш ответ здесь..." 
-                        required
-                        <?php echo localStorage.getItem('isLoggedIn') === 'true' ? '' : 'disabled'; ?>
-                    ></textarea>
+                    <div class="reply-toolbar" id="replyToolbar">
+                        <button type="button" class="editor-tool" data-command="bold" title="Жирный">
+                            <i class="fas fa-bold"></i>
+                        </button>
+                        <button type="button" class="editor-tool" data-command="italic" title="Курсив">
+                            <i class="fas fa-italic"></i>
+                        </button>
+                        <button type="button" class="editor-tool" data-command="underline" title="Подчеркнутый">
+                            <i class="fas fa-underline"></i>
+                        </button>
+                        <button type="button" class="editor-tool" data-command="insertUnorderedList" title="Маркированный список">
+                            <i class="fas fa-list-ul"></i>
+                        </button>
+                        <button type="button" class="editor-tool" id="insertQuoteBtn" title="Цитата">
+                            <i class="fas fa-quote-right"></i>
+                        </button>
+                        <button type="button" class="editor-tool" id="insertLinkBtn" title="Ссылка">
+                            <i class="fas fa-link"></i>
+                        </button>
+                        <button type="button" class="editor-tool" id="clearFormatBtn" title="Очистить форматирование">
+                            <i class="fas fa-eraser"></i>
+                        </button>
+                    </div>
+
+                    <div class="reply-editor" id="replyTextEditor" contenteditable="true" data-placeholder="Напишите ваш ответ здесь..."></div>
+                    <textarea id="replyText" hidden></textarea>
+
+                    <div class="reply-attachments">
+                        <button type="button" class="attach-image-btn" id="attachImageBtn">
+                            <i class="fas fa-link"></i>
+                            Добавить URL фото
+                        </button>
+                        <span class="attach-hint">До 5 ссылок на изображения (http/https)</span>
+                    </div>
+
+                    <div class="reply-image-preview" id="replyImagePreview"></div>
+
                     <div class="form-actions">
                         <button type="button" class="cancel-reply" id="cancelReply">Отмена</button>
-                        <button type="submit" class="submit-reply" id="submitReply" 
-                                <?php echo localStorage.getItem('isLoggedIn') === 'true' ? '' : 'disabled'; ?>>
+                        <button type="submit" class="submit-reply" id="submitReply">
                             <i class="fas fa-paper-plane"></i>
                             Отправить ответ
                         </button>
@@ -79,50 +109,9 @@
     <div id="footer"></div>
     
     <!-- Скрипты -->
+    <script src="/static/js/script.js"></script>
     <script>
 
-            // Загрузка хедера и футера
-        document.addEventListener('DOMContentLoaded', function() {
-            // Загружаем хедер
-            fetch('fragments/header.html')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Не удалось загрузить хедер');
-                    }
-                    return response.text();
-                })
-                .then(data => {
-                    document.getElementById('header').innerHTML = data;
-                    console.log('Хедер загружен');
-                    // Инициализируем скрипты после загрузки хедера
-                    if (typeof initializeHeader === 'function') {
-                        initializeHeader();
-                    }
-                })
-                .catch(error => {
-                    console.error('Ошибка загрузки хедера:', error);
-                    document.getElementById('header').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки хедера</div>';
-                });
-
-            // Загружаем футер
-            fetch('fragments/footer.html')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Не удалось загрузить футер');
-                    }
-                    return response.text();
-                })
-                .then(data => {
-                    document.getElementById('footer').innerHTML = data;
-                    console.log('Футер загружен');
-                })
-                .catch(error => {
-                    console.error('Ошибка загрузки футера:', error);
-                    document.getElementById('footer').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки футера</div>';
-                });
-
-                initializeMainScripts();
-        });
         // Данные для темы
         const topicData = {
             101: {
@@ -144,8 +133,8 @@
             // ... другие темы
         };
         
-        // Сообщения в теме
-        const topicMessages = {
+        // Резервные сообщения (используются только если API недоступен)
+        const fallbackTopicMessages = {
             101: [
                 {
                     id: 1,
@@ -196,17 +185,83 @@
                 }
             ]
         };
+
+        function sanitizeMessageHtml(rawHtml) {
+            if (!rawHtml) return '';
+            const temp = document.createElement('div');
+            temp.innerHTML = rawHtml;
+            const allowed = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'BR', 'DIV', 'P', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'A']);
+
+            temp.querySelectorAll('*').forEach(node => {
+                if (!allowed.has(node.tagName)) {
+                    node.replaceWith(document.createTextNode(node.textContent || ''));
+                    return;
+                }
+
+                Array.from(node.attributes).forEach(attr => {
+                    if (node.tagName === 'A' && attr.name === 'href') {
+                        const href = node.getAttribute('href') || '';
+                        if (!/^https?:\/\//i.test(href)) {
+                            node.removeAttribute('href');
+                        } else {
+                            node.setAttribute('target', '_blank');
+                            node.setAttribute('rel', 'noopener noreferrer');
+                        }
+                    } else {
+                        node.removeAttribute(attr.name);
+                    }
+                });
+            });
+
+            return temp.innerHTML.trim();
+        }
+
+        function normalizeImageUrl(url) {
+            if (typeof url !== 'string') {
+                return null;
+            }
+
+            const normalized = url.trim();
+            if (!/^https?:\/\/[^\s"'<>]+$/i.test(normalized)) {
+                return null;
+            }
+
+            return normalized;
+        }
         
         // Функция загрузки данных темы
-        function loadTopicData() {
+        async function loadTopicData() {
             const urlParams = new URLSearchParams(window.location.search);
-            const topicId = urlParams.get('topic') || sessionStorage.getItem('currentTopicId') || 101;
-            
-            const topic = topicData[topicId];
-            
-            if (!topic) {
-                window.location.href = 'game-topics.html';
-                return;
+            const topicId = Number(urlParams.get('topic') || sessionStorage.getItem('currentTopicId') || 101);
+            const fallbackTopicTitle = sessionStorage.getItem('currentTopicTitle') || `Тема #${topicId}`;
+            let topic = topicData[topicId] || {
+                title: fallbackTopicTitle,
+                author: 'Участник форума',
+                date: new Date().toLocaleDateString('ru-RU'),
+                replies: 0,
+                views: 0,
+                description: 'Обсуждение темы игрового сообщества'
+            };
+
+            try {
+                const response = await fetch(`/api/forum/topics/${topicId}`);
+                if (response.ok) {
+                    const topicFromApi = await response.json();
+                    topic = {
+                        title: topicFromApi.title || topic.title,
+                        author: topicFromApi.author || topic.author,
+                        date: topicFromApi.lastActivity || topic.date,
+                        replies: topicFromApi.replies ?? topic.replies,
+                        views: topicFromApi.views ?? topic.views,
+                        description: topicFromApi.description || topic.description
+                    };
+
+                    if (topicFromApi.gameId) {
+                        sessionStorage.setItem('currentGameId', String(topicFromApi.gameId));
+                    }
+                }
+            } catch (error) {
+                console.warn('Не удалось загрузить тему через API, используется резервный режим', error);
             }
             
             // Обновляем заголовок страницы
@@ -221,53 +276,82 @@
             document.getElementById('currentTopic').textContent = topic.title;
             
             // Обновляем ссылку назад
-            document.getElementById('backToTopics').href = `game-topics.html?game=${sessionStorage.getItem('currentGameId') || 1}`;
+            document.getElementById('backToTopics').href = `/game-topics.html?game=${sessionStorage.getItem('currentGameId') || 1}`;
             
             // Загружаем сообщения
             loadTopicMessages(topicId);
         }
         
         // Функция загрузки сообщений
-        function loadTopicMessages(topicId) {
-            const messages = topicMessages[topicId] || [];
+        async function loadTopicMessages(topicId) {
+            let messages = [];
             const messagesList = document.getElementById('messagesList');
             const noMessages = document.getElementById('noMessages');
-            
+
+            try {
+                const response = await fetch(`/api/forum/topics/${topicId}/messages`);
+                if (!response.ok) {
+                    throw new Error('Не удалось загрузить сообщения темы');
+                }
+                messages = await response.json();
+            } catch (error) {
+                console.warn('API форума недоступен, загружаем резервные сообщения', error);
+                messages = fallbackTopicMessages[topicId] || [];
+            }
+
             messagesList.innerHTML = '';
-            
+            document.getElementById('repliesCount').textContent = String(messages.length);
+
             if (messages.length === 0) {
                 noMessages.style.display = 'block';
-                document.getElementById('replyFormContainer').style.display = 'none';
+                document.getElementById('replyFormContainer').style.display = 'block';
                 return;
             }
-            
+
             noMessages.style.display = 'none';
-            
+
             messages.forEach(message => {
                 const messageCard = document.createElement('div');
                 messageCard.className = 'message-card';
                 messageCard.dataset.id = message.id;
-                
+
                 // Генерация цвета аватара если нет в данных
                 const avatarColor = message.avatarColor || getRandomColor();
-                
+                const safeContent = sanitizeMessageHtml(message.content || '');
+                const safeAuthor = escapeHtml(message.author || 'Участник форума');
+                const safeDate = escapeHtml(message.date || 'только что');
+                const likes = Number(message.likes ?? 0);
+                const messageImages = (message.imageUrls || [])
+                    .map(normalizeImageUrl)
+                    .filter(Boolean)
+                    .map(url => `
+                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="message-image-link">
+                        <img src="${url}" alt="Прикрепленное фото" class="message-image-item">
+                    </a>
+                `).join('');
+
+                const imagesBlock = messageImages
+                    ? `<div class="message-images">${messageImages}</div>`
+                    : '';
+
                 messageCard.innerHTML = `
                     <div class="message-header">
                         <div class="user-avatar" style="background: ${avatarColor};">
                             <i class="fas fa-user"></i>
                         </div>
                         <div class="user-info">
-                            <h4>${message.author}</h4>
-                            <p>${message.date}</p>
+                            <h4>${safeAuthor}</h4>
+                            <p>${safeDate}</p>
                         </div>
                     </div>
                     <div class="message-content">
-                        ${message.content}
+                        ${safeContent}
                     </div>
+                    ${imagesBlock}
                     <div class="message-actions">
                         <div class="message-action" data-action="like">
                             <i class="fas fa-thumbs-up"></i>
-                            <span>${message.likes}</span>
+                            <span>${likes}</span>
                         </div>
                         <div class="message-action" data-action="reply">
                             <i class="fas fa-reply"></i>
@@ -279,7 +363,7 @@
                         </div>
                     </div>
                 `;
-                
+
                 messagesList.appendChild(messageCard);
             });
         }
@@ -292,6 +376,15 @@
             ];
             return colors[Math.floor(Math.random() * colors.length)];
         }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
         
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
@@ -299,21 +392,41 @@
             loadTopicData();
             
             // Проверяем авторизацию для формы ответа
-            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const isLoggedIn = Boolean(localStorage.getItem('token'));
+            const replyEditor = document.getElementById('replyTextEditor');
             const replyText = document.getElementById('replyText');
             const submitReply = document.getElementById('submitReply');
+            const attachImageBtn = document.getElementById('attachImageBtn');
+            const replyImagePreview = document.getElementById('replyImagePreview');
+            const currentTopicId = Number(
+                new URLSearchParams(window.location.search).get('topic')
+                || sessionStorage.getItem('currentTopicId')
+                || 101
+            );
+            const MAX_IMAGES = 5;
+            const attachedImages = [];
+
+            initializeReplyEditor();
+            initializeImageAttachments();
             
             if (!isLoggedIn) {
-                replyText.placeholder = "Войдите в аккаунт, чтобы оставлять ответы";
-                replyText.disabled = true;
+                replyEditor.setAttribute('contenteditable', 'false');
+                replyEditor.dataset.placeholder = 'Войдите в аккаунт, чтобы оставлять ответы';
+                replyEditor.classList.add('is-disabled');
                 submitReply.disabled = true;
                 submitReply.innerHTML = '<i class="fas fa-lock"></i> Войдите для ответа';
+                document.querySelectorAll('.editor-tool').forEach(button => {
+                    button.disabled = true;
+                    button.classList.add('is-disabled');
+                });
+                attachImageBtn.disabled = true;
+                attachImageBtn.classList.add('is-disabled');
             }
             
             // Обработчик формы ответа
             const replyForm = document.getElementById('replyForm');
             if (replyForm) {
-                replyForm.addEventListener('submit', function(e) {
+                replyForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
                     
                     if (!isLoggedIn) {
@@ -321,36 +434,191 @@
                         return;
                     }
                     
-                    const replyText = document.getElementById('replyText').value.trim();
+                    const replyHtml = sanitizeReplyHtml(replyEditor.innerHTML.trim());
+                    const replyPlainText = extractPlainText(replyHtml);
+                    replyText.value = replyHtml;
                     
-                    if (!replyText) {
-                        alert('Введите текст ответа');
+                    if (!replyPlainText && attachedImages.length === 0) {
+                        alert('Введите текст ответа или прикрепите фото');
                         return;
                     }
                     
-                    // Имитация отправки ответа
                     const submitBtn = document.getElementById('submitReply');
                     const originalText = submitBtn.innerHTML;
                     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
                     submitBtn.disabled = true;
-                    
-                    setTimeout(() => {
-                        alert('Ответ успешно отправлен! (имитация)');
-                        document.getElementById('replyText').value = '';
+
+                    try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch(`/api/forum/topics/${currentTopicId}/messages`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                            },
+                            body: JSON.stringify({
+                                content: replyHtml,
+                                imageUrls: attachedImages.map(image => image.url)
+                            })
+                        });
+
+                        if (!response.ok) {
+                            let errorMessage = 'Не удалось отправить сообщение';
+                            try {
+                                const errorData = await response.json();
+                                errorMessage = errorData.message || errorMessage;
+                            } catch (_) {
+                                // noop
+                            }
+                            throw new Error(errorMessage);
+                        }
+
+                        replyEditor.innerHTML = '';
+                        replyText.value = '';
+                        clearAttachedImages();
+                        await loadTopicMessages(currentTopicId);
+                    } catch (error) {
+                        alert(error.message || 'Ошибка при отправке сообщения');
+                    } finally {
                         submitBtn.innerHTML = originalText;
                         submitBtn.disabled = false;
-                        
-                        // Обновляем счетчик ответов
-                        const repliesCount = document.getElementById('repliesCount');
-                        repliesCount.textContent = parseInt(repliesCount.textContent) + 1;
-                    }, 1500);
+                    }
                 });
             }
             
             // Кнопка отмены
             document.getElementById('cancelReply')?.addEventListener('click', function() {
-                document.getElementById('replyText').value = '';
+                replyEditor.innerHTML = '';
+                replyText.value = '';
+                clearAttachedImages();
             });
+
+            function initializeReplyEditor() {
+                const toolbarButtons = document.querySelectorAll('.editor-tool[data-command]');
+                toolbarButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        if (!isLoggedIn) return;
+                        const command = this.dataset.command;
+                        replyEditor.focus();
+                        document.execCommand(command, false);
+                        syncEditorState();
+                    });
+                });
+
+                document.getElementById('insertQuoteBtn')?.addEventListener('click', function() {
+                    if (!isLoggedIn) return;
+                    replyEditor.focus();
+                    document.execCommand('formatBlock', false, 'blockquote');
+                    syncEditorState();
+                });
+
+                document.getElementById('insertLinkBtn')?.addEventListener('click', function() {
+                    if (!isLoggedIn) return;
+                    const rawUrl = prompt('Введите ссылку (https://...)');
+                    if (!rawUrl) return;
+
+                    const url = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+                    replyEditor.focus();
+                    document.execCommand('createLink', false, url);
+                    syncEditorState();
+                });
+
+                document.getElementById('clearFormatBtn')?.addEventListener('click', function() {
+                    if (!isLoggedIn) return;
+                    replyEditor.focus();
+                    document.execCommand('removeFormat', false);
+                    document.execCommand('formatBlock', false, 'div');
+                    syncEditorState();
+                });
+
+                replyEditor.addEventListener('input', syncEditorState);
+                replyEditor.addEventListener('blur', syncEditorState);
+            }
+
+            function initializeImageAttachments() {
+                attachImageBtn?.addEventListener('click', function() {
+                    if (!isLoggedIn) return;
+
+                    if (attachedImages.length >= MAX_IMAGES) {
+                        alert(`Можно добавить максимум ${MAX_IMAGES} ссылок на фото.`);
+                        return;
+                    }
+
+                    const rawUrl = prompt('Вставьте URL изображения (http:// или https://)');
+                    if (!rawUrl) return;
+
+                    const url = normalizeImageUrl(rawUrl);
+                    if (!url) {
+                        alert('Некорректный URL изображения');
+                        return;
+                    }
+
+                    if (attachedImages.some(image => image.url === url)) {
+                        alert('Эта ссылка уже добавлена');
+                        return;
+                    }
+
+                    attachedImages.push({
+                        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                        url
+                    });
+
+                    renderImagePreview();
+                });
+
+                replyImagePreview?.addEventListener('click', function(event) {
+                    const removeButton = event.target.closest('[data-remove-image-id]');
+                    if (!removeButton) return;
+
+                    const id = removeButton.dataset.removeImageId;
+                    const index = attachedImages.findIndex(image => image.id === id);
+                    if (index === -1) return;
+
+                    attachedImages.splice(index, 1);
+                    renderImagePreview();
+                });
+            }
+
+            function renderImagePreview() {
+                if (attachedImages.length === 0) {
+                    replyImagePreview.innerHTML = '';
+                    return;
+                }
+
+                replyImagePreview.innerHTML = attachedImages.map(image => `
+                    <div class="image-preview-card">
+                        <a href="${image.url}" target="_blank" rel="noopener noreferrer">
+                            <img src="${image.url}" alt="Прикрепленное фото">
+                        </a>
+                        <button type="button" class="remove-image-btn" data-remove-image-id="${image.id}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            function clearAttachedImages() {
+                attachedImages.length = 0;
+                renderImagePreview();
+            }
+
+            function syncEditorState() {
+                if (replyEditor.innerHTML === '<br>') {
+                    replyEditor.innerHTML = '';
+                }
+                replyText.value = sanitizeReplyHtml(replyEditor.innerHTML.trim());
+            }
+
+            function extractPlainText(html) {
+                if (!html) return '';
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                return (temp.textContent || '').replace(/\s+/g, ' ').trim();
+            }
+
+            function sanitizeReplyHtml(rawHtml) {
+                return sanitizeMessageHtml(rawHtml);
+            }
             
             // Загружаем хедер и футер
             loadHeaderAndFooter();
@@ -367,9 +635,13 @@
                 .then(html => {
                     document.getElementById('header').innerHTML = html;
                     console.log('Хедер загружен в обсуждении');
+                    if (typeof initializeHeader === 'function') {
+                        initializeHeader();
+                    }
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки хедера:', error);
+                    document.getElementById('header').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки хедера</div>';
                 });
             
             // Загружаем футер
@@ -380,9 +652,13 @@
                 })
                 .then(html => {
                     document.getElementById('footer').innerHTML = html;
+                    if (typeof initializeFooter === 'function') {
+                        initializeFooter();
+                    }
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки футера:', error);
+                    document.getElementById('footer').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки футера</div>';
                 });
         }
     </script>

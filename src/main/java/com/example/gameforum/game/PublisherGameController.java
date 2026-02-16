@@ -3,11 +3,9 @@ package com.example.gameforum.game;
 import com.example.gameforum.game.dto.CreateGameRequest;
 import com.example.gameforum.game.dto.UpdateGameRequest;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/publisher/games")
 public class PublisherGameController {
 

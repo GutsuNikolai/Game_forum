@@ -3,12 +3,10 @@ package com.example.gameforum.review;
 import com.example.gameforum.review.dto.ReviewView;
 import com.example.gameforum.review.dto.UpsertReviewRequest;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/publisher/games/{slug}/review")
 public class PublisherReviewController {
 

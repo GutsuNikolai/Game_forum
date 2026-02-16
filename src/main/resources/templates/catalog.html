@@ -60,50 +60,8 @@
     <div id="footer"></div>
     
     <!-- Скрипты -->
+    <script src="/static/js/script.js"></script>
     <script>
-
-        // Загрузка хедера и футера
-    document.addEventListener('DOMContentLoaded', function() {
-        // Загружаем хедер
-        fetch('fragments/header.html')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Не удалось загрузить хедер');
-                }
-                return response.text();
-            })
-            .then(data => {
-                document.getElementById('header').innerHTML = data;
-                console.log('Хедер загружен');
-                // Инициализируем скрипты после загрузки хедера
-                if (typeof initializeHeader === 'function') {
-                    initializeHeader();
-                }
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки хедера:', error);
-                document.getElementById('header').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки хедера</div>';
-            });
-
-        // Загружаем футер
-        fetch('fragments/footer.html')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Не удалось загрузить футер');
-                }
-                return response.text();
-            })
-            .then(data => {
-                document.getElementById('footer').innerHTML = data;
-                console.log('Футер загружен');
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки футера:', error);
-                document.getElementById('footer').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки футера</div>';
-            });
-
-            initializeMainScripts();
-    });
 
         // Массив с играми
         const games = [
@@ -248,7 +206,7 @@
             sessionStorage.setItem('currentGameTitle', gameTitle);
             
             // Переходим на страницу тем
-            window.location.href = `game-topics.html?game=${gameId}`;
+            window.location.href = `/game-topics.html?game=${gameId}`;
         }
         
         // Функция для фильтрации игр
@@ -306,6 +264,9 @@
                 .then(html => {
                     document.getElementById('header').innerHTML = html;
                     console.log('Хедер загружен в каталоге');
+                    if (typeof initializeHeader === 'function') {
+                        initializeHeader();
+                    }
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки хедера:', error);
@@ -320,6 +281,9 @@
                 })
                 .then(html => {
                     document.getElementById('footer').innerHTML = html;
+                    if (typeof initializeFooter === 'function') {
+                        initializeFooter();
+                    }
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки футера:', error);

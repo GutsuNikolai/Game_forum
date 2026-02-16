@@ -22,7 +22,7 @@
         <!-- Заголовок страницы -->
         <section class="page-header">
             <div class="topics-container">
-                <a href="catalog.html" class="back-button">
+                <a href="/catalog.html" class="back-button">
                     <i class="fas fa-arrow-left"></i>
                     Назад к каталогу
                 </a>
@@ -57,63 +57,53 @@
                 <i class="fas fa-comments"></i>
                 <h3>Темы не найдены</h3>
                 <p>Будьте первым, кто создаст тему для обсуждения!</p>
-                <button class="new-topic-btn" style="margin-top: 20px;">
+                <button class="new-topic-btn" id="createFirstTopicBtn" style="margin-top: 20px;">
                     <i class="fas fa-plus"></i>
                     Создать тему
                 </button>
             </div>
         </section>
+
+        <div class="topic-modal" id="topicModal">
+            <div class="topic-modal-overlay" id="topicModalOverlay"></div>
+            <div class="topic-modal-content glass-panel">
+                <div class="topic-modal-header">
+                    <h3><i class="fas fa-pen"></i> Создать новую тему</h3>
+                    <button type="button" class="topic-modal-close" id="closeTopicModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="createTopicForm" class="topic-modal-form">
+                    <label for="topicTitleInput">Заголовок темы</label>
+                    <input type="text" id="topicTitleInput" maxlength="120" required placeholder="Например: Гайд для новичков">
+
+                    <label for="topicDescriptionInput">Описание</label>
+                    <textarea id="topicDescriptionInput" maxlength="1000" required placeholder="Кратко опишите, о чем будет тема"></textarea>
+
+                    <label for="topicIconInput">Иконка (необязательно)</label>
+                    <input type="text" id="topicIconInput" placeholder="fas fa-comments">
+                    <p class="topic-modal-hint">Пример: <code>fas fa-gamepad</code>, <code>fas fa-book</code></p>
+
+                    <div class="topic-modal-actions">
+                        <button type="button" class="topic-modal-cancel" id="cancelTopicCreate">Отмена</button>
+                        <button type="submit" class="topic-modal-submit" id="submitTopicCreate">
+                            <i class="fas fa-plus"></i>
+                            Создать тему
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </main>
     
     <!-- Футер -->
     <div id="footer"></div>
     
     <!-- Скрипты -->
+    <script src="/static/js/script.js"></script>
     <script>
 
-
-        // Загрузка хедера и футера
-    document.addEventListener('DOMContentLoaded', function() {
-        // Загружаем хедер
-        fetch('fragments/header.html')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Не удалось загрузить хедер');
-                }
-                return response.text();
-            })
-            .then(data => {
-                document.getElementById('header').innerHTML = data;
-                console.log('Хедер загружен');
-                // Инициализируем скрипты после загрузки хедера
-                if (typeof initializeHeader === 'function') {
-                    initializeHeader();
-                }
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки хедера:', error);
-                document.getElementById('header').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки хедера</div>';
-            });
-
-            // Загружаем футер
-            fetch('fragments/footer.html')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Не удалось загрузить футер');
-                    }
-                    return response.text();
-                })
-                .then(data => {
-                    document.getElementById('footer').innerHTML = data;
-                    console.log('Футер загружен');
-                })
-                .catch(error => {
-                    console.error('Ошибка загрузки футера:', error);
-                    document.getElementById('footer').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки футера</div>';
-                });
-
-                initializeMainScripts();
-        });
         // Данные игр (должны совпадать с catalog.html)
         const games = {
             1: {
@@ -153,9 +143,12 @@
                 rating: 4.6
             }
         };
+
+        let currentGameId = 1;
+        let isCreatingTopic = false;
         
-        // Темы для игр
-        const gameTopics = {
+        // Резервные темы для игр (используются, если API недоступен)
+        const fallbackGameTopics = {
             1: [
                 {
                     id: 101,
@@ -237,12 +230,11 @@
         // Функция для загрузки данных игры
         function loadGameData() {
             const urlParams = new URLSearchParams(window.location.search);
-            const gameId = urlParams.get('game') || sessionStorage.getItem('currentGameId') || 1;
-            
-            const game = games[gameId];
+            currentGameId = Number(urlParams.get('game') || sessionStorage.getItem('currentGameId') || 1);
+            const game = games[currentGameId];
             
             if (!game) {
-                window.location.href = 'catalog.html';
+                window.location.href = '/catalog.html';
                 return;
             }
             
@@ -252,6 +244,8 @@
             // Обновляем данные игры
             document.getElementById('gameTitle').textContent = game.title;
             document.getElementById('gameDescription').textContent = game.description;
+            sessionStorage.setItem('currentGameId', String(currentGameId));
+            sessionStorage.setItem('currentGameTitle', game.title);
             
             const gameIcon = document.getElementById('gameIcon');
             gameIcon.innerHTML = `
@@ -259,14 +253,25 @@
             `;
             
             // Загружаем темы для игры
-            loadGameTopics(gameId);
+            loadGameTopics(currentGameId);
         }
         
         // Функция для загрузки тем
-        function loadGameTopics(gameId) {
-            const topics = gameTopics[gameId] || [];
+        async function loadGameTopics(gameId) {
+            let topics = [];
             const topicsList = document.getElementById('topicsList');
             const noTopics = document.getElementById('noTopics');
+
+            try {
+                const response = await fetch(`/api/forum/games/${gameId}/topics`);
+                if (!response.ok) {
+                    throw new Error('Не удалось загрузить темы');
+                }
+                topics = await response.json();
+            } catch (error) {
+                console.warn('API тем недоступен, используем резервные данные', error);
+                topics = fallbackGameTopics[gameId] || [];
+            }
             
             topicsList.innerHTML = '';
             
@@ -281,10 +286,17 @@
                 const topicCard = document.createElement('div');
                 topicCard.className = 'topic-card';
                 topicCard.dataset.id = topic.id;
+                const replies = topic.replies ?? 0;
+                const views = topic.views ?? 0;
+                const icon = sanitizeIconClass(topic.icon);
+                const lastActivity = escapeHtml(topic.lastActivity || 'только что');
+                const author = escapeHtml(topic.author || 'Участник форума');
+                const title = escapeHtml(topic.title || 'Тема без названия');
+                const description = escapeHtml(topic.description || 'Без описания');
                 
                 topicCard.innerHTML = `
                     <div class="topic-icon">
-                        <i class="${topic.icon}"></i>
+                        <i class="${icon}"></i>
                     </div>
                     <div class="topic-content">
                         <div class="topic-author">
@@ -292,16 +304,16 @@
                                 <i class="fas fa-user"></i>
                             </div>
                             <div class="author-info">
-                                <h4>${topic.author}</h4>
+                                <h4>${author}</h4>
                                 <p>Создал тему</p>
                             </div>
                         </div>
-                        <h3 class="topic-title">${topic.title}</h3>
-                        <p class="topic-description">${topic.description}</p>
+                        <h3 class="topic-title">${title}</h3>
+                        <p class="topic-description">${description}</p>
                         <div class="topic-meta">
-                            <span><i class="fas fa-comment"></i> ${topic.replies} ответов</span>
-                            <span><i class="fas fa-eye"></i> ${topic.views.toLocaleString()} просмотров</span>
-                            <span><i class="fas fa-clock"></i> ${topic.lastActivity}</span>
+                            <span><i class="fas fa-comment"></i> ${replies} ответов</span>
+                            <span><i class="fas fa-eye"></i> ${Number(views).toLocaleString()} просмотров</span>
+                            <span><i class="fas fa-clock"></i> ${lastActivity}</span>
                         </div>
                     </div>
                 `;
@@ -320,9 +332,10 @@
             // Сохраняем данные темы
             sessionStorage.setItem('currentTopicId', topicId);
             sessionStorage.setItem('currentTopicTitle', topicTitle);
+            sessionStorage.setItem('currentGameId', String(currentGameId));
             
             // Переходим на страницу обсуждения
-            window.location.href = `topic-discussion.html?topic=${topicId}`;
+            window.location.href = `/topic-discussion.html?topic=${topicId}`;
         }
         
         // Инициализация при загрузке страницы
@@ -332,18 +345,143 @@
             
             // Обработчик кнопки создания темы
             document.getElementById('newTopicBtn').addEventListener('click', function() {
-                const gameId = new URLSearchParams(window.location.search).get('game');
-                if (localStorage.getItem('isLoggedIn') === 'true') {
-                    // В будущем можно сделать форму создания темы
-                    alert('Форма создания темы будет реализована позже');
+                if (localStorage.getItem('token')) {
+                    openTopicModal();
                 } else {
-                    alert('Войдите в аккаунт, чтобы создавать темы');
+                    window.location.href = '/auth/login.html';
                 }
             });
+
+            document.getElementById('createFirstTopicBtn')?.addEventListener('click', function() {
+                if (localStorage.getItem('token')) {
+                    openTopicModal();
+                } else {
+                    window.location.href = '/auth/login.html';
+                }
+            });
+
+            document.getElementById('closeTopicModal')?.addEventListener('click', closeTopicModal);
+            document.getElementById('cancelTopicCreate')?.addEventListener('click', closeTopicModal);
+            document.getElementById('topicModalOverlay')?.addEventListener('click', closeTopicModal);
+
+            document.getElementById('createTopicForm')?.addEventListener('submit', handleTopicCreate);
             
             // Загружаем хедер и футер
             loadHeaderAndFooter();
         });
+
+        function openTopicModal() {
+            const modal = document.getElementById('topicModal');
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTopicModal() {
+            const modal = document.getElementById('topicModal');
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+            document.getElementById('createTopicForm')?.reset();
+        }
+
+        async function handleTopicCreate(event) {
+            event.preventDefault();
+            if (isCreatingTopic) {
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/auth/login.html';
+                return;
+            }
+
+            const title = document.getElementById('topicTitleInput')?.value?.trim() || '';
+            const description = document.getElementById('topicDescriptionInput')?.value?.trim() || '';
+            const icon = document.getElementById('topicIconInput')?.value?.trim() || '';
+
+            if (title.length < 5) {
+                notify('Введите заголовок минимум из 5 символов', 'warning');
+                return;
+            }
+
+            if (description.length < 10) {
+                notify('Введите описание минимум из 10 символов', 'warning');
+                return;
+            }
+
+            const submitButton = document.getElementById('submitTopicCreate');
+            const originalHtml = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Создание...';
+            isCreatingTopic = true;
+
+            try {
+                const response = await fetch(`/api/forum/games/${currentGameId}/topics`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ title, description, icon })
+                });
+
+                if (!response.ok) {
+                    let message = 'Не удалось создать тему';
+                    try {
+                        const payload = await response.json();
+                        message = payload.message || message;
+                    } catch (_) {
+                        // ignore json parse errors
+                    }
+                    throw new Error(message);
+                }
+
+                const createdTopic = await response.json();
+                notify('Тема успешно создана', 'success');
+                closeTopicModal();
+                await loadGameTopics(currentGameId);
+
+                if (createdTopic?.id) {
+                    setTimeout(() => openTopic(createdTopic.id, createdTopic.title), 250);
+                }
+            } catch (error) {
+                notify(error.message || 'Ошибка при создании темы', 'error');
+            } finally {
+                isCreatingTopic = false;
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalHtml;
+            }
+        }
+
+        function notify(message, type = 'info') {
+            if (typeof window.showNotification === 'function') {
+                window.showNotification(message, type);
+                return;
+            }
+            alert(message);
+        }
+
+        function sanitizeIconClass(icon) {
+            const value = typeof icon === 'string' ? icon.trim() : '';
+            return /^fa[srb]?\sfa-[a-z0-9-]+$/i.test(value) ? value : 'fas fa-comments';
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
         
         // Функция загрузки хедера и футера
         function loadHeaderAndFooter() {
@@ -356,9 +494,13 @@
                 .then(html => {
                     document.getElementById('header').innerHTML = html;
                     console.log('Хедер загружен в темах');
+                    if (typeof initializeHeader === 'function') {
+                        initializeHeader();
+                    }
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки хедера:', error);
+                    document.getElementById('header').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки хедера</div>';
                 });
             
             // Загружаем футер
@@ -369,9 +511,13 @@
                 })
                 .then(html => {
                     document.getElementById('footer').innerHTML = html;
+                    if (typeof initializeFooter === 'function') {
+                        initializeFooter();
+                    }
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки футера:', error);
+                    document.getElementById('footer').innerHTML = '<div style="color: white; padding: 20px; text-align: center;">Ошибка загрузки футера</div>';
                 });
         }
     </script>

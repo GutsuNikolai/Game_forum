@@ -1,0 +1,328 @@
+.profile-page .profile-main {
+    margin-top: 130px;
+    min-height: calc(100vh - 280px);
+    padding: 20px 0 10px;
+}
+
+.profile-hero {
+    display: grid;
+    grid-template-columns: 220px 1fr auto;
+    gap: 24px;
+    align-items: center;
+    padding: 30px;
+    margin-bottom: 26px;
+}
+
+.profile-avatar-wrap {
+    padding: 20px;
+    text-align: center;
+}
+
+.profile-avatar {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    color: #ffffff;
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.85), rgba(76, 201, 240, 0.75));
+    border: 2px solid rgba(255, 255, 255, 0.28);
+}
+
+.profile-rank {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.profile-headline h1 {
+    margin: 0 0 10px;
+    font-size: 34px;
+    line-height: 1.2;
+}
+
+.profile-headline p {
+    margin: 0 0 16px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 16px;
+}
+
+.profile-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.profile-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 13px;
+}
+
+.profile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.profile-actions .action-btn {
+    min-width: 170px;
+    padding: 12px 16px;
+}
+
+.profile-actions .action-btn.secondary {
+    background: rgba(255, 255, 255, 0.07) !important;
+}
+
+.profile-actions .action-btn.active {
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.34), rgba(76, 201, 240, 0.34)) !important;
+    border-color: rgba(76, 201, 240, 0.5) !important;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.profile-card {
+    padding: 24px;
+}
+
+.profile-card h2 {
+    margin: 0 0 16px;
+    font-size: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-card h2 i {
+    color: #4cc9f0;
+}
+
+.profile-card p {
+    color: rgba(255, 255, 255, 0.78);
+    line-height: 1.7;
+    margin: 0;
+}
+
+.profile-list {
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 10px;
+}
+
+.profile-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.profile-list i {
+    color: #4cc9f0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.stat-box {
+    padding: 16px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.stat-value {
+    display: block;
+    font-size: 30px;
+    line-height: 1;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(45deg, #4cc9f0, #9d8dff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.stat-label {
+    display: block;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.profile-card.full {
+    grid-column: 1 / -1;
+}
+
+.profile-edit-grid {
+    margin-top: 4px;
+}
+
+.form-card {
+    transition: opacity 0.2s ease;
+}
+
+.profile-form {
+    display: grid;
+    gap: 10px;
+}
+
+.profile-form label {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.88);
+    font-weight: 600;
+}
+
+.profile-form input,
+.profile-form textarea {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.profile-form textarea {
+    min-height: 130px;
+    resize: vertical;
+}
+
+.profile-form input:focus,
+.profile-form textarea:focus {
+    outline: none;
+    border-color: rgba(76, 201, 240, 0.85);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.settings-checkboxes {
+    display: grid;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.setting-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.95rem;
+}
+
+.setting-check input {
+    width: 16px;
+    height: 16px;
+}
+
+.form-actions-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.favorite-games {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.game-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(76, 201, 240, 0.14);
+    border: 1px solid rgba(76, 201, 240, 0.35);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+}
+
+.fragment-error {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 14px 18px;
+    border-radius: 10px;
+    text-align: center;
+    color: #fff;
+    background: rgba(255, 107, 107, 0.75);
+}
+
+@media (max-width: 992px) {
+    .profile-hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .profile-tags {
+        justify-content: center;
+    }
+
+    .profile-actions {
+        flex-direction: row;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .profile-actions .action-btn {
+        min-width: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .profile-page .profile-main {
+        margin-top: 112px;
+    }
+
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-card.full {
+        grid-column: auto;
+    }
+
+    .profile-hero {
+        padding: 22px;
+    }
+
+    .profile-headline h1 {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-hero {
+        gap: 16px;
+    }
+
+    .profile-avatar {
+        width: 90px;
+        height: 90px;
+        font-size: 30px;
+    }
+
+    .profile-card {
+        padding: 18px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}

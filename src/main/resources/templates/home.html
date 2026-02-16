@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GameForum - Игровое сообщество</title>
-    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,7 +34,7 @@
                             <i class="fas fa-gamepad"></i>
                             Присоединиться
                         </button>
-                        <a href="catalog.html" class="btn-secondary glass-btn">
+                        <a href="/catalog.html" class="btn-secondary glass-btn">
                             <i class="fas fa-list"></i>
                             Каталог игр
                         </a>
@@ -73,7 +73,7 @@
             <section class="games-section">
                 <div class="section-header">
                     <h2><i class="fas fa-fire"></i> Популярные игры</h2>
-                    <a href="catalog.html" class="view-all">
+                    <a href="/catalog.html" class="view-all">
                         Все игры <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -459,12 +459,12 @@
     <!-- Футер -->
     <div id="footer"></div>
 
-    <script src="../static/js/script.js"></script>
+    <script src="/static/js/script.js"></script>
     <script>
         // Загрузка хедера и футера
     document.addEventListener('DOMContentLoaded', function() {
         // Загружаем хедер
-        fetch('fragments/header.html')
+        fetch('/fragments/header.html')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Не удалось загрузить хедер');
@@ -485,7 +485,7 @@
             });
 
         // Загружаем футер
-        fetch('fragments/footer.html')
+        fetch('/fragments/footer.html')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Не удалось загрузить футер');
@@ -511,16 +511,13 @@
             const joinBtn = document.getElementById('joinBtn');
             if (joinBtn) {
                 joinBtn.addEventListener('click', function() {
-                    // Открываем модальное окно регистрации
-                    if (typeof openModal === 'function') {
-                        const registerModal = document.getElementById('registerModal');
-                        if (registerModal) {
-                            openModal(registerModal);
-                        } else {
-                            console.error('Модальное окно регистрации не найдено');
-                            showNotification('Пожалуйста, войдите или зарегистрируйтесь', 'info');
-                        }
+                    const registerModal = document.getElementById('registerModal');
+                    if (typeof openModal === 'function' && registerModal) {
+                        openModal(registerModal);
+                        return;
                     }
+
+                    window.location.href = '/auth/register.html';
                 });
             }
 
@@ -546,14 +543,13 @@
             const ctaRegisterBtn = document.getElementById('ctaRegisterBtn');
             if (ctaRegisterBtn) {
                 ctaRegisterBtn.addEventListener('click', function() {
-                    if (typeof openModal === 'function') {
-                        const registerModal = document.getElementById('registerModal');
-                        if (registerModal) {
-                            openModal(registerModal);
-                        } else {
-                            showNotification('Пожалуйста, войдите или зарегистрируйтесь', 'info');
-                        }
+                    const registerModal = document.getElementById('registerModal');
+                    if (typeof openModal === 'function' && registerModal) {
+                        openModal(registerModal);
+                        return;
                     }
+
+                    window.location.href = '/auth/register.html';
                 });
             }
 

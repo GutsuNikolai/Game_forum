@@ -141,9 +141,9 @@
 
             <!-- Ссылка на вход -->
             <div class="auth-footer">
-                <p>Уже есть аккаунт? <a href="/templates/auth/login.html">Войти</a></p>
+                <p>Уже есть аккаунт? <a href="/auth/login.html">Войти</a></p>
                 <p style="margin-top: 15px;">
-                    <a href="/templates/home.html">
+                    <a href="/home.html">
                         <i class="fas fa-arrow-left"></i> Вернуться на главную
                     </a>
                 </p>
@@ -161,6 +161,25 @@
             const confirmPasswordInput = document.getElementById('confirmPassword');
             const registerForm = document.getElementById('registerForm');
             const submitBtn = document.getElementById('submitBtn');
+
+            const existingToken = localStorage.getItem('token');
+            if (existingToken) {
+                fetch('/api/me', {
+                    headers: { 'Authorization': `Bearer ${existingToken}` }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = '/home.html';
+                        return;
+                    }
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('isLoggedIn');
+                })
+                .catch(() => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('isLoggedIn');
+                });
+            }
             
             // Проверка доступности имени пользователя
             let usernameTimeout;
@@ -385,20 +404,21 @@
                     return response.json().then(err => { throw err; });
                 })
                 .then(data => {
+                    const token = data.token || data.accessToken;
+                    if (!token) {
+                        throw new Error('Сервер не вернул токен авторизации');
+                    }
+
                     // Успешная регистрация
                     showNotification('Регистрация успешна!', 'success');
                     
                     // Сохраняем токен
-                    if (data.token) {
-                        localStorage.setItem('token', data.token);
-                        localStorage.setItem('isLoggedIn', 'true');
-                        localStorage.setItem('username', userData.username);
-                        
-                        // Перенаправляем на главную через 2 секунды
-                        setTimeout(() => {
-                            window.location.href = '/home.html';
-                        }, 2000);
-                    }
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('username', userData.username);
+                    
+                    // Перенаправляем на главную
+                    window.location.href = '/home.html';
                 })
                 .catch(error => {
                     // Обработка ошибок

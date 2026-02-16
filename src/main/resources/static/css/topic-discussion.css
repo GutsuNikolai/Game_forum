@@ -123,7 +123,29 @@
             color: rgba(255, 255, 255, 0.9);
             margin-bottom: 20px;
         }
-        
+
+        .message-images {
+            margin: 14px 0 18px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .message-image-link {
+            display: block;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .message-image-item {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+
         .message-actions {
             display: flex;
             gap: 15px;
@@ -156,8 +178,38 @@
             margin-bottom: 20px;
             color: white;
         }
-        
-        .reply-form textarea {
+
+        .reply-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .editor-tool {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.85);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .editor-tool:hover {
+            background: rgba(0, 180, 219, 0.2);
+            border-color: rgba(0, 180, 219, 0.6);
+            color: #fff;
+        }
+
+        .editor-tool.is-disabled,
+        .editor-tool:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .reply-editor {
             width: 100%;
             min-height: 150px;
             padding: 15px;
@@ -167,14 +219,107 @@
             color: white;
             font-size: 1rem;
             font-family: 'Inter', sans-serif;
-            resize: vertical;
+            line-height: 1.6;
             transition: all 0.3s ease;
+            overflow-y: auto;
         }
-        
-        .reply-form textarea:focus {
+
+        .reply-editor:empty::before {
+            content: attr(data-placeholder);
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+        }
+
+        .reply-editor blockquote {
+            margin: 10px 0;
+            padding: 8px 12px;
+            border-left: 3px solid #00b4db;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 6px;
+        }
+
+        .reply-editor:focus {
             outline: none;
             border-color: #00b4db;
             background: rgba(255, 255, 255, 0.15);
+        }
+
+        .reply-editor.is-disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .reply-attachments {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .attach-image-btn {
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .attach-image-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .attach-image-btn.is-disabled,
+        .attach-image-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .attach-hint {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .reply-image-preview {
+            margin-top: 14px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+            gap: 10px;
+        }
+
+        .image-preview-card {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.06);
+            aspect-ratio: 1 / 1;
+        }
+
+        .image-preview-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .remove-image-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.65);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .form-actions {
@@ -240,6 +385,11 @@
             .message-header {
                 flex-direction: column;
                 text-align: center;
+            }
+
+            .reply-attachments {
+                flex-direction: column;
+                align-items: flex-start;
             }
             
             .form-actions {

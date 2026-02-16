@@ -56,4 +56,17 @@ public class AuthService {
         String token = jwt.generateToken(u.getId(), u.getUsername(), u.getRole());
         return new AuthResponse(token);
     }
+
+    public boolean isUsernameAvailable(String username) {
+        if (username == null) {
+            return false;
+        }
+
+        String normalized = username.trim();
+        if (normalized.length() < 3) {
+            return false;
+        }
+
+        return !users.existsByUsername(normalized);
+    }
 }
