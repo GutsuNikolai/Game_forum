@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -41,14 +41,9 @@
                     </div>
                 </div>
                 <div class="hero-image">
-                    <div class="game-card glass-card">
-                        <div class="game-badge">🔥 Популярно</div>
-                        <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
-                            alt="Игровая тематика" class="game-image">
-                        <div class="game-info">
-                            <h3>Cyberpunk 2077</h3>
-                            <p>1,245 обсуждений</p>
-                        </div>
+                    <div class="game-card hero-showcase">
+                        <img src="/img/covers/home_page.png"
+                            alt="Игровая тематика" class="game-image hero-game-image">
                     </div>
                     <div class="hero-stats">
                         <div class="stat-item glass-card">
@@ -440,7 +435,100 @@
         // Инициализация основных скриптов
         initializeMainScripts();
     });
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
+        function openTopicDiscussion(topicId, topicTitle, gameId) {
+            sessionStorage.setItem('currentTopicId', String(topicId));
+            sessionStorage.setItem('currentTopicTitle', topicTitle);
+            sessionStorage.setItem('currentGameId', String(gameId));
+            window.location.href = `/topic-discussion.html?topic=${topicId}`;
+        }
+
+        function bindLatestDiscussionButtons() {
+            const buttons = document.querySelectorAll('.discussion-open');
+            buttons.forEach(button => {
+                if (button.dataset.bound === 'true') return;
+                button.addEventListener('click', function() {
+                    const topicId = Number(this.dataset.topicId || 0);
+                    const gameId = Number(this.dataset.gameId || 1);
+                    const topicTitle = this.dataset.topicTitle || 'Обсуждение';
+                    if (topicId > 0) {
+                        openTopicDiscussion(topicId, topicTitle, gameId);
+                    }
+                });
+                button.dataset.bound = 'true';
+            });
+        }
+
+        async function loadLatestDiscussionsSection() {
+            const container = document.querySelector('.discussions-section .discussions-list');
+            if (!container) return;
+
+            try {
+                const [topicsResp, gamesResp] = await Promise.all([
+                    fetch('/api/forum/latest-topics?limit=5'),
+                    fetch('/api/games?page=0&size=100')
+                ]);
+                if (!topicsResp.ok) return;
+
+                const topics = await topicsResp.json();
+                if (!Array.isArray(topics) || topics.length === 0) return;
+
+                const gamesMap = new Map();
+                if (gamesResp.ok) {
+                    const gp = await gamesResp.json();
+                    const items = Array.isArray(gp?.items) ? gp.items : [];
+                    items.forEach(item => gamesMap.set(Number(item.id), item.title || `Игра #${item.id}`));
+                }
+
+                container.innerHTML = topics.map(topic => {
+                    const topicId = Number(topic.id || 0);
+                    const gameId = Number(topic.gameId || 1);
+                    const title = escapeHtml(topic.title || 'Тема');
+                    const description = escapeHtml(topic.description || 'Без описания');
+                    const author = escapeHtml(topic.author || 'Участник');
+                    const lastActivity = escapeHtml(topic.lastActivity || 'только что');
+                    const replies = Number(topic.replies ?? 0);
+                    const views = Number(topic.views ?? 0);
+                    const gameTitle = escapeHtml(gamesMap.get(gameId) || `Игра #${gameId}`);
+
+                    return `
+                        <div class="discussion-item glass-card">
+                            <div class="discussion-header">
+                                <div class="discussion-author">
+                                    <div class="author-avatar"><i class="fas fa-user"></i></div>
+                                    <div class="author-info">
+                                        <span class="author-name">${author}</span>
+                                        <span class="discussion-time">${lastActivity}</span>
+                                    </div>
+                                </div>
+                                <div class="discussion-game"><i class="fas fa-gamepad"></i><span>${gameTitle}</span></div>
+                            </div>
+                            <h3 class="discussion-title">${title}</h3>
+                            <p class="discussion-preview">${description}</p>
+                            <div class="discussion-footer">
+                                <div class="discussion-stats">
+                                    <span><i class="fas fa-comment"></i> ${replies}</span>
+                                    <span><i class="fas fa-eye"></i> ${views}</span>
+                                </div>
+                                <button class="discussion-open glass-btn" data-topic-id="${topicId}" data-game-id="${gameId}" data-topic-title="${title}">
+                                    <i class="fas fa-arrow-right"></i> Открыть
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Ошибка загрузки последних обсуждений:', error);
+            }
+        }
 
         function initializeMainScripts() {
             // Кнопка "Присоединиться" в герое
@@ -466,13 +554,10 @@
                 });
             });
 
-            // Кнопки "Ответить" в обсуждениях
-            const discussionJoinBtns = document.querySelectorAll('.discussion-join');
-            discussionJoinBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const discussionTitle = this.closest('.discussion-item').querySelector('.discussion-title').textContent;
-                    showNotification(`Откройте обсуждение "${discussionTitle}" чтобы ответить`, 'info');
-                });
+            // Кнопки "Ответить" в обсуждениях
+            // Последние 5 обсуждений из БД
+            loadLatestDiscussionsSection().finally(() => {
+                bindLatestDiscussionButtons();
             });
 
             // CTA кнопка регистрации
@@ -503,3 +588,7 @@
     </script>
 </body>
 </html>
+
+
+
+
