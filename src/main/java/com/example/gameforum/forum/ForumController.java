@@ -30,6 +30,11 @@ public class ForumController {
         return ResponseEntity.of(Optional.ofNullable(storageService.getTopic(topicId)));
     }
 
+    @GetMapping("/latest-topics")
+    public List<ForumTopicView> getLatestTopics(@RequestParam(defaultValue = "5") int limit) {
+        return storageService.getLatestTopics(limit);
+    }
+
     @PostMapping("/games/{gameId}/topics")
     public ResponseEntity<ForumTopicView> addTopic(
             @PathVariable Long gameId,

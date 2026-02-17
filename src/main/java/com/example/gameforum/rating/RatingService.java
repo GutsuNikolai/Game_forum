@@ -14,12 +14,17 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Service
-@RequiredArgsConstructor
 public class RatingService {
 
     private final RatingRepository ratings;
     private final GameRepository games;
     private final UserRepository users;
+
+    public RatingService(RatingRepository ratings, GameRepository games, UserRepository users) {
+        this.ratings = ratings;
+        this.games = games;
+        this.users = users;
+    }
 
     @Transactional
     public RatingResult setRating(String slug, String username, SetRatingRequest req) {

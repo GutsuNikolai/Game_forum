@@ -1,0 +1,10 @@
+{
+  "Publisher1" : {
+    "bio" : "About me",
+    "city" : "Mama I'a v Dubae",
+    "favoriteGames" : [ "Dota1", "Dota2", "Dota3" ],
+    "emailNotifications" : true,
+    "publicProfile" : true,
+    "updatedAt" : "2026-02-17T00:15:29.203523200+02:00"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "1" : [ {
+    "id" : 101,
+    "gameId" : 1,
+    "title" : "Гайдsfdsf",
+    "description" : "Tetstdsfdsfsd",
+    "author" : "qwety",
+    "replies" : 3,
+    "views" : 0,
+    "lastActivity" : "16 февраля 2026, 16:50",
+    "icon" : "fas fa-gamepad"
+  } ]
+}

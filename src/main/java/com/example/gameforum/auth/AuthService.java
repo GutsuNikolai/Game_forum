@@ -13,12 +13,17 @@ import org.springframework.stereotype.Service;
 import java.time.OffsetDateTime;
 
 @Service
-@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository users;
     private final PasswordEncoder encoder;
     private final JwtService jwt;
+
+    public AuthService(UserRepository users, PasswordEncoder encoder, JwtService jwt) {
+        this.users = users;
+        this.encoder = encoder;
+        this.jwt = jwt;
+    }
 
     public AuthResponse register(RegisterRequest req) {
         if (users.existsByUsername(req.username())) {

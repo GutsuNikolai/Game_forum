@@ -4,7 +4,6 @@ import com.example.gameforum.common.NotFoundException;
 import com.example.gameforum.game.dto.GameDetails;
 import com.example.gameforum.game.dto.GameListItem;
 import com.example.gameforum.review.ReviewService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
@@ -16,18 +15,24 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 @Service
-@RequiredArgsConstructor
 public class GameService {
 
     private final GameRepository games;
     private final ReviewService reviews;
 
+    public GameService(GameRepository games, ReviewService reviews) {
+        this.games = games;
+        this.reviews = reviews;
+    }
+
     public Page<GameListItem> list(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         return games.findAll(pageable).map(g ->
                 new GameListItem(
+                        g.getId(),
                         g.getSlug(),
                         g.getTitle(),
+                        g.getDescription() == null ? "" : g.getDescription(),
                         g.getCoverUrl(),
                         g.getRatingAvg() == null ? 0.0 : g.getRatingAvg().doubleValue(),
                         g.getRatingCnt() == null ? 0 : g.getRatingCnt()

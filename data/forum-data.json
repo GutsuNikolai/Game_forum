@@ -1,0 +1,30 @@
+{
+  "101" : [ {
+    "id" : 1,
+    "author" : "qwety",
+    "avatarColor" : "#ffd93d",
+    "date" : "16 февраля 2026, 16:44",
+    "content" : "ываываываыв",
+    "imageUrls" : [ ],
+    "likes" : 0,
+    "replies" : 0
+  }, {
+    "id" : 2,
+    "author" : "qwety",
+    "avatarColor" : "#ffd93d",
+    "date" : "16 февраля 2026, 16:45",
+    "content" : "ываывавыаыва",
+    "imageUrls" : [ ],
+    "likes" : 0,
+    "replies" : 0
+  }, {
+    "id" : 3,
+    "author" : "qwety",
+    "avatarColor" : "#ffd93d",
+    "date" : "16 февраля 2026, 16:50",
+    "content" : "",
+    "imageUrls" : [ "https://avatars.mds.yandex.net/i?id=9dfd8c751c1aac731c5186411e4e1ac4_l-12856446-images-thumbs&n=13" ],
+    "likes" : 0,
+    "replies" : 0
+  } ]
+}
