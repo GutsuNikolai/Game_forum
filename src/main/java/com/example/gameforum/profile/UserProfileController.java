@@ -3,8 +3,11 @@ package com.example.gameforum.profile;
 import com.example.gameforum.profile.dto.UpdateAccountSettingsRequest;
 import com.example.gameforum.profile.dto.UpdateProfileRequest;
 import com.example.gameforum.profile.dto.UserProfileView;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/me")
@@ -35,6 +38,14 @@ public class UserProfileController {
             Authentication authentication
     ) {
         return profileService.updateAccountSettings(getUsername(authentication), request);
+    }
+
+    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public UserProfileView uploadAvatar(
+            @RequestParam("avatar") MultipartFile avatar,
+            Authentication authentication
+    ) {
+        return profileService.updateAvatar(getUsername(authentication), avatar);
     }
 
     private String getUsername(Authentication authentication) {

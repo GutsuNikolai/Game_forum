@@ -35,6 +35,10 @@
                         <h1 id="gameTitle">Загрузка...</h1>
                         <p id="gameDescription"></p>
                     </div>
+                    <div class="game-rating-panel glass-card" id="gameRatingPanel">
+                        <div class="rating-panel-title">Оценка игры</div>
+                        <div class="rating-panel-loading">Загрузка...</div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -145,6 +149,10 @@
         };
 
         let currentGameId = 1;
+        let currentGameSlug = '';
+        let currentGameRatingAvg = 0;
+        let currentGameRatingCnt = 0;
+        let myGameRating = null;
         let isCreatingTopic = false;
         
         // Резервные темы для игр (используются, если API недоступен)
@@ -261,6 +269,10 @@
             const gameTitle = game.title || `Game #${currentGameId}`;
             const gameDescription = game.description || 'Description is temporarily unavailable';
             const gameCover = game.coverUrl || game.image || '/img/covers/cs2.jpg';
+            currentGameSlug = game.slug || '';
+            currentGameRatingAvg = Number(game.ratingAvg || game.rating || 0);
+            currentGameRatingCnt = Number(game.ratingCnt || 0);
+            myGameRating = getMyRating(currentGameSlug);
 
             document.title = `${gameTitle} - Topics - GameForum`;
             document.getElementById('gameTitle').textContent = gameTitle;
@@ -273,7 +285,93 @@
                 <img src="${gameCover}" alt="${gameTitle}" onerror="this.src='/img/covers/cs2.jpg'">
             `;
 
+            renderGameRatingPanel();
             loadGameTopics(currentGameId);
+        }
+
+        function ratingStorageKey(slug) {
+            return `myGameRating:${slug}`;
+        }
+
+        function getMyRating(slug) {
+            if (!slug) return null;
+            const raw = sessionStorage.getItem(ratingStorageKey(slug));
+            const num = Number(raw);
+            return Number.isFinite(num) && num >= 1 && num <= 10 ? num : null;
+        }
+
+        function setMyRating(slug, value) {
+            if (!slug) return;
+            sessionStorage.setItem(ratingStorageKey(slug), String(value));
+        }
+
+        function renderGameRatingPanel() {
+            const panel = document.getElementById('gameRatingPanel');
+            if (!panel) return;
+
+            const canRate = Boolean(localStorage.getItem('token')) && Boolean(currentGameSlug);
+            const chips = Array.from({ length: 10 }, (_, i) => {
+                const value = i + 1;
+                const activeClass = myGameRating === value ? 'is-active' : '';
+                return `<button type="button" class="rating-chip ${activeClass}" data-rate-value="${value}" ${canRate ? '' : 'disabled'}>${value}</button>`;
+            }).join('');
+
+            panel.innerHTML = `
+                <div class="rating-panel-title">Оценка игры</div>
+                <div class="rating-panel-summary">
+                    <span class="rating-avg"><i class="fas fa-star"></i> ${currentGameRatingAvg.toFixed(1)}</span>
+                    <span class="rating-count">${currentGameRatingCnt} оценок</span>
+                </div>
+                <div class="rating-chip-grid">${chips}</div>
+                <div class="rating-panel-hint">${canRate ? 'Выберите оценку от 1 до 10' : 'Войдите, чтобы оценить игру'}</div>
+            `;
+
+            panel.querySelectorAll('[data-rate-value]').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const value = Number(this.dataset.rateValue || 0);
+                    if (!value) return;
+                    await submitGameRating(value);
+                });
+            });
+        }
+
+        async function submitGameRating(value) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/auth/login.html';
+                return;
+            }
+            if (!currentGameSlug) {
+                return;
+            }
+
+            const panel = document.getElementById('gameRatingPanel');
+            panel?.classList.add('is-loading');
+            try {
+                const response = await fetch(`/api/games/${encodeURIComponent(currentGameSlug)}/rating`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ value })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Не удалось сохранить оценку');
+                }
+
+                const result = await response.json();
+                currentGameRatingAvg = Number(result?.ratingAvg || currentGameRatingAvg);
+                currentGameRatingCnt = Number(result?.ratingCnt || currentGameRatingCnt);
+                myGameRating = value;
+                setMyRating(currentGameSlug, value);
+                renderGameRatingPanel();
+            } catch (error) {
+                alert(error.message || 'Ошибка при отправке оценки');
+            } finally {
+                panel?.classList.remove('is-loading');
+            }
         }
 
         async function loadGameTopics(gameId) {

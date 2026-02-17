@@ -8,4 +8,5 @@ import java.util.List;
 public interface ForumTopicRepository extends JpaRepository<ForumTopicEntity, Long> {
     List<ForumTopicEntity> findByGameIdOrderByIdDesc(Long gameId);
     List<ForumTopicEntity> findByOrderByLastActivityAtDesc(Pageable pageable);
+    long countByAuthor(String author);
 }
