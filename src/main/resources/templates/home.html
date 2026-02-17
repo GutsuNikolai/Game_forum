@@ -545,12 +545,24 @@
                 });
             }
 
-            // Кнопки "Присоединиться" в карточках игр
+            // Кнопки "Обсудить" в карточках игр
             const gameJoinBtns = document.querySelectorAll('.game-join');
+            const gameIdByTitle = {
+                'Counter-Strike 2': 1,
+                'Dota 2': 2
+            };
             gameJoinBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
                     const gameTitle = this.closest('.game-item').querySelector('h3').textContent;
-                    showNotification(`Вы присоединились к сообществу "${gameTitle}"!`, 'success');
+                    const gameId = gameIdByTitle[gameTitle];
+                    if (!gameId) {
+                        window.location.href = '/catalog.html';
+                        return;
+                    }
+
+                    sessionStorage.setItem('currentGameId', String(gameId));
+                    sessionStorage.setItem('currentGameTitle', gameTitle);
+                    window.location.href = `/game-topics.html?game=${gameId}`;
                 });
             });
 

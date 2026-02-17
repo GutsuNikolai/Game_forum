@@ -5,6 +5,11 @@ spring:
   application:
     name: game-forum
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 25MB
+
   datasource:
     url: jdbc:postgresql://localhost:5432/game_forum
     username: postgres

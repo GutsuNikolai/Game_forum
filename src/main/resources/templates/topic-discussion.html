@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -85,10 +85,11 @@
 
                     <div class="reply-attachments">
                         <button type="button" class="attach-image-btn" id="attachImageBtn">
-                            <i class="fas fa-link"></i>
-                            Добавить URL фото
+                            <i class="fas fa-image"></i>
+                            Upload image
                         </button>
-                        <span class="attach-hint">До 5 ссылок на изображения (http/https)</span>
+                        <input type="file" id="attachImageInput" accept="image/*" multiple hidden>
+                        <span class="attach-hint">Up to 5 images (jpg/png/webp/gif, max 5 MB)</span>
                     </div>
 
                     <div class="reply-image-preview" id="replyImagePreview"></div>
@@ -222,11 +223,9 @@
             }
 
             const normalized = url.trim();
-            if (!/^https?:\/\/[^\s"'<>]+$/i.test(normalized)) {
-                return null;
-            }
-
-            return normalized;
+            const isRemote = /^https?:\/\/[^\s"'<>]+$/i.test(normalized);
+            const isLocal = /^\/[^\s"'<>]+$/.test(normalized);
+            return (isRemote || isLocal) ? normalized : null;
         }
         
         // Функция загрузки данных темы
@@ -321,6 +320,7 @@
                 const safeAuthor = escapeHtml(message.author || 'Участник форума');
                 const safeDate = escapeHtml(message.date || 'только что');
                 const likes = Number(message.likes ?? 0);
+                const isLiked = hasLikedMessage(topicId, message.id);
                 const messageImages = (message.imageUrls || [])
                     .map(normalizeImageUrl)
                     .filter(Boolean)
@@ -349,7 +349,7 @@
                     </div>
                     ${imagesBlock}
                     <div class="message-actions">
-                        <div class="message-action" data-action="like">
+                        <div class="message-action ${isLiked ? 'is-liked' : ''}" data-action="like" data-message-id="${message.id}">
                             <i class="fas fa-thumbs-up"></i>
                             <span>${likes}</span>
                         </div>
@@ -385,6 +385,94 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         }
+
+        function likedMessagesStorageKey(topicId) {
+            return `likedTopicMessages:${topicId}`;
+        }
+
+        function getLikedMessages(topicId) {
+            try {
+                const raw = sessionStorage.getItem(likedMessagesStorageKey(topicId));
+                const parsed = raw ? JSON.parse(raw) : [];
+                return new Set(Array.isArray(parsed) ? parsed.map(Number) : []);
+            } catch (_) {
+                return new Set();
+            }
+        }
+
+        function hasLikedMessage(topicId, messageId) {
+            const liked = getLikedMessages(topicId);
+            return liked.has(Number(messageId));
+        }
+
+        function markMessageLiked(topicId, messageId) {
+            const liked = getLikedMessages(topicId);
+            liked.add(Number(messageId));
+            sessionStorage.setItem(likedMessagesStorageKey(topicId), JSON.stringify(Array.from(liked)));
+        }
+
+        function bindMessageActionHandlers(topicId) {
+            const messagesList = document.getElementById('messagesList');
+            if (!messagesList || messagesList.dataset.actionsBound === 'true') {
+                return;
+            }
+
+            messagesList.addEventListener('click', async function(event) {
+                const actionElement = event.target.closest('.message-action');
+                if (!actionElement) return;
+
+                const action = actionElement.dataset.action;
+                if (action !== 'like') {
+                    return;
+                }
+
+                const messageId = Number(actionElement.dataset.messageId || 0);
+                if (!messageId) return;
+
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    alert('Войдите в аккаунт, чтобы ставить лайки');
+                    window.location.href = '/auth/login.html';
+                    return;
+                }
+
+                if (hasLikedMessage(topicId, messageId)) {
+                    return;
+                }
+
+                actionElement.classList.add('is-loading');
+                try {
+                    const response = await fetch(`/api/forum/messages/${messageId}/like`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Не удалось поставить лайк');
+                    }
+
+                    const updated = await response.json();
+                    const likesValue = Number(updated?.likes ?? NaN);
+                    const likesSpan = actionElement.querySelector('span');
+                    if (likesSpan && Number.isFinite(likesValue)) {
+                        likesSpan.textContent = String(likesValue);
+                    } else if (likesSpan) {
+                        likesSpan.textContent = String(Number(likesSpan.textContent || 0) + 1);
+                    }
+
+                    markMessageLiked(topicId, messageId);
+                    actionElement.classList.add('is-liked');
+                } catch (error) {
+                    alert(error.message || 'Ошибка при установке лайка');
+                } finally {
+                    actionElement.classList.remove('is-loading');
+                }
+            });
+
+            messagesList.dataset.actionsBound = 'true';
+        }
         
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
@@ -397,6 +485,7 @@
             const replyText = document.getElementById('replyText');
             const submitReply = document.getElementById('submitReply');
             const attachImageBtn = document.getElementById('attachImageBtn');
+            const attachImageInput = document.getElementById('attachImageInput');
             const replyImagePreview = document.getElementById('replyImagePreview');
             const currentTopicId = Number(
                 new URLSearchParams(window.location.search).get('topic')
@@ -408,6 +497,7 @@
 
             initializeReplyEditor();
             initializeImageAttachments();
+            bindMessageActionHandlers(currentTopicId);
             
             if (!isLoggedIn) {
                 replyEditor.setAttribute('contenteditable', 'false');
@@ -421,6 +511,7 @@
                 });
                 attachImageBtn.disabled = true;
                 attachImageBtn.classList.add('is-disabled');
+                attachImageInput.disabled = true;
             }
             
             // Обработчик формы ответа
@@ -538,32 +629,78 @@
             function initializeImageAttachments() {
                 attachImageBtn?.addEventListener('click', function() {
                     if (!isLoggedIn) return;
+                    attachImageInput?.click();
+                });
+
+                attachImageInput?.addEventListener('change', async function(event) {
+                    if (!isLoggedIn) return;
+
+                    const files = Array.from(event.target.files || []);
+                    if (files.length === 0) return;
 
                     if (attachedImages.length >= MAX_IMAGES) {
-                        alert(`Можно добавить максимум ${MAX_IMAGES} ссылок на фото.`);
+                        alert(`You can attach up to ${MAX_IMAGES} images.`);
+                        event.target.value = '';
                         return;
                     }
 
-                    const rawUrl = prompt('Вставьте URL изображения (http:// или https://)');
-                    if (!rawUrl) return;
-
-                    const url = normalizeImageUrl(rawUrl);
-                    if (!url) {
-                        alert('Некорректный URL изображения');
+                    const remainingSlots = MAX_IMAGES - attachedImages.length;
+                    const filesToUpload = files.slice(0, remainingSlots);
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        alert('Please sign in to upload images.');
+                        event.target.value = '';
                         return;
                     }
 
-                    if (attachedImages.some(image => image.url === url)) {
-                        alert('Эта ссылка уже добавлена');
-                        return;
+                    const originalButtonHtml = attachImageBtn.innerHTML;
+                    attachImageBtn.disabled = true;
+                    attachImageBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+                    try {
+                        for (const file of filesToUpload) {
+                            if (!file.type || !file.type.startsWith('image/')) {
+                                continue;
+                            }
+
+                            const formData = new FormData();
+                            formData.append('file', file);
+
+                            const response = await fetch('/api/forum/uploads/image', {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: formData
+                            });
+
+                            if (!response.ok) {
+                                throw new Error('Failed to upload image');
+                            }
+
+                            const payload = await response.json();
+                            const imageUrl = normalizeImageUrl(payload?.url || '');
+                            if (!imageUrl) {
+                                continue;
+                            }
+                            if (attachedImages.some(image => image.url === imageUrl)) {
+                                continue;
+                            }
+
+                            attachedImages.push({
+                                id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                                url: imageUrl
+                            });
+                        }
+
+                        renderImagePreview();
+                    } catch (error) {
+                        alert(error.message || 'Image upload failed');
+                    } finally {
+                        attachImageBtn.disabled = false;
+                        attachImageBtn.innerHTML = originalButtonHtml;
+                        event.target.value = '';
                     }
-
-                    attachedImages.push({
-                        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-                        url
-                    });
-
-                    renderImagePreview();
                 });
 
                 replyImagePreview?.addEventListener('click', function(event) {
@@ -664,3 +801,4 @@
     </script>
 </body>
 </html>
+

@@ -164,6 +164,15 @@
         .message-action:hover {
             color: #00b4db;
         }
+
+        .message-action.is-liked {
+            color: #00b4db;
+        }
+
+        .message-action.is-loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
         
         .reply-form-container {
             background: rgba(255, 255, 255, 0.05);

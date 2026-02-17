@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -228,35 +228,54 @@
         };
         
         // Функция для загрузки данных игры
-        function loadGameData() {
+        async function loadGameData() {
             const urlParams = new URLSearchParams(window.location.search);
-            currentGameId = Number(urlParams.get('game') || sessionStorage.getItem('currentGameId') || 1);
-            const game = games[currentGameId];
-            
-            if (!game) {
-                window.location.href = '/catalog.html';
-                return;
+            const fromQuery = Number(urlParams.get('game'));
+            const fromStorage = Number(sessionStorage.getItem('currentGameId'));
+            currentGameId = Number.isFinite(fromQuery) && fromQuery > 0
+                ? fromQuery
+                : (Number.isFinite(fromStorage) && fromStorage > 0 ? fromStorage : 1);
+
+            let game = null;
+            try {
+                const response = await fetch('/api/games?page=0&size=200');
+                if (response.ok) {
+                    const payload = await response.json();
+                    const items = Array.isArray(payload?.items) ? payload.items : [];
+                    game = items.find(item => Number(item.id) === currentGameId) || null;
+                }
+            } catch (error) {
+                console.warn('Failed to load game from API:', error);
             }
-            
-            // Обновляем заголовок страницы
-            document.title = `${game.title} - Темы - GameForum`;
-            
-            // Обновляем данные игры
-            document.getElementById('gameTitle').textContent = game.title;
-            document.getElementById('gameDescription').textContent = game.description;
+
+            if (!game) {
+                const fallbackTitle = sessionStorage.getItem('currentGameTitle') || `Game #${currentGameId}`;
+                game = {
+                    id: currentGameId,
+                    title: fallbackTitle,
+                    description: 'Description is temporarily unavailable',
+                    coverUrl: '/img/covers/cs2.jpg'
+                };
+            }
+
+            const gameTitle = game.title || `Game #${currentGameId}`;
+            const gameDescription = game.description || 'Description is temporarily unavailable';
+            const gameCover = game.coverUrl || game.image || '/img/covers/cs2.jpg';
+
+            document.title = `${gameTitle} - Topics - GameForum`;
+            document.getElementById('gameTitle').textContent = gameTitle;
+            document.getElementById('gameDescription').textContent = gameDescription;
             sessionStorage.setItem('currentGameId', String(currentGameId));
-            sessionStorage.setItem('currentGameTitle', game.title);
-            
+            sessionStorage.setItem('currentGameTitle', gameTitle);
+
             const gameIcon = document.getElementById('gameIcon');
             gameIcon.innerHTML = `
-                <img src="${game.image}" alt="${game.title}" onerror="this.src='https://images.unsplash.com/photo-1552820728-8b83bb6b773f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'">
+                <img src="${gameCover}" alt="${gameTitle}" onerror="this.src='/img/covers/cs2.jpg'">
             `;
-            
-            // Загружаем темы для игры
+
             loadGameTopics(currentGameId);
         }
-        
-        // Функция для загрузки тем
+
         async function loadGameTopics(gameId) {
             let topics = [];
             const topicsList = document.getElementById('topicsList');
@@ -523,3 +542,4 @@
     </script>
 </body>
 </html>
+

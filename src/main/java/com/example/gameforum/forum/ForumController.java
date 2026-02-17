@@ -2,13 +2,17 @@ package com.example.gameforum.forum;
 
 import com.example.gameforum.forum.dto.CreateForumMessageRequest;
 import com.example.gameforum.forum.dto.CreateForumTopicRequest;
+import com.example.gameforum.forum.dto.ForumImageUploadView;
+import com.example.gameforum.forum.dto.ForumMessageLikeView;
 import com.example.gameforum.forum.dto.ForumMessageView;
 import com.example.gameforum.forum.dto.ForumTopicView;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +23,7 @@ import java.util.Optional;
 public class ForumController {
 
     private final ForumStorageService storageService;
+    private final ForumUploadService uploadService;
 
     @GetMapping("/games/{gameId}/topics")
     public List<ForumTopicView> getGameTopics(@PathVariable Long gameId) {
@@ -66,5 +71,31 @@ public class ForumController {
 
         ForumMessageView created = storageService.addMessage(topicId, authentication.getName(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PostMapping("/messages/{messageId}/like")
+    public ResponseEntity<ForumMessageLikeView> likeMessage(
+            @PathVariable Long messageId,
+            Authentication authentication
+    ) {
+        if (authentication == null) {
+            throw new IllegalArgumentException("Требуется авторизация");
+        }
+
+        ForumMessageLikeView updated = storageService.likeMessage(messageId);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PostMapping(value = "/uploads/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ForumImageUploadView> uploadImage(
+            @RequestPart("file") MultipartFile file,
+            Authentication authentication
+    ) {
+        if (authentication == null) {
+            throw new IllegalArgumentException("Требуется авторизация");
+        }
+
+        String url = uploadService.storeImage(file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ForumImageUploadView(url));
     }
 }

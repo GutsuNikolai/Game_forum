@@ -2,6 +2,7 @@ package com.example.gameforum.forum;
 
 import com.example.gameforum.forum.dto.CreateForumMessageRequest;
 import com.example.gameforum.forum.dto.CreateForumTopicRequest;
+import com.example.gameforum.forum.dto.ForumMessageLikeView;
 import com.example.gameforum.forum.dto.ForumMessageView;
 import com.example.gameforum.forum.dto.ForumTopicView;
 import com.example.gameforum.game.GameRepository;
@@ -61,7 +62,7 @@ public class ForumStorageService {
     @Transactional
     public ForumTopicView addTopic(Long gameId, String author, CreateForumTopicRequest request) {
         if (!games.existsById(gameId)) {
-            throw new IllegalArgumentException("Игра не найдена");
+            throw new IllegalArgumentException("Ð˜Ð³Ñ€Ð° Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ð°");
         }
 
         OffsetDateTime now = OffsetDateTime.now();
@@ -89,12 +90,12 @@ public class ForumStorageService {
     @Transactional
     public ForumMessageView addMessage(Long topicId, String author, CreateForumMessageRequest request) {
         ForumTopicEntity topic = topics.findById(topicId)
-                .orElseThrow(() -> new IllegalArgumentException("Тема не найдена"));
+                .orElseThrow(() -> new IllegalArgumentException("Ð¢ÐµÐ¼Ð° Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ð°"));
 
         String sanitizedContent = sanitizeMessageContent(request.content());
         List<String> imageUrls = sanitizeImageUrls(request.imageUrls());
         if (sanitizedContent.isBlank() && imageUrls.isEmpty()) {
-            throw new IllegalArgumentException("Введите текст сообщения или добавьте хотя бы одну ссылку на фото");
+            throw new IllegalArgumentException("Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ñ‚ÐµÐºÑÑ‚ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ Ð¸Ð»Ð¸ Ð´Ð¾Ð±Ð°Ð²ÑŒÑ‚Ðµ Ñ…Ð¾Ñ‚Ñ Ð±Ñ‹ Ð¾Ð´Ð½Ñƒ ÑÑÑ‹Ð»ÐºÑƒ Ð½Ð° Ñ„Ð¾Ñ‚Ð¾");
         }
 
         OffsetDateTime now = OffsetDateTime.now();
@@ -116,6 +117,18 @@ public class ForumStorageService {
         topics.save(topic);
 
         return toMessageView(saved);
+    }
+
+    @Transactional
+    public ForumMessageLikeView likeMessage(Long messageId) {
+        ForumMessageEntity message = messages.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Ð¡Ð¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ð¾"));
+
+        int updatedLikes = (message.getLikes() == null ? 0 : message.getLikes()) + 1;
+        message.setLikes(updatedLikes);
+        messages.save(message);
+
+        return new ForumMessageLikeView(message.getId(), updatedLikes);
     }
 
     private ForumTopicView toTopicView(ForumTopicEntity topic) {
@@ -174,29 +187,29 @@ public class ForumStorageService {
         }
         String trimmed = content.trim();
         if (trimmed.length() > 5000) {
-            throw new IllegalArgumentException("Слишком длинное сообщение (максимум 5000 символов)");
+            throw new IllegalArgumentException("Ð¡Ð»Ð¸ÑˆÐºÐ¾Ð¼ Ð´Ð»Ð¸Ð½Ð½Ð¾Ðµ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ (Ð¼Ð°ÐºÑÐ¸Ð¼ÑƒÐ¼ 5000 ÑÐ¸Ð¼Ð²Ð¾Ð»Ð¾Ð²)");
         }
         return trimmed;
     }
 
     private String sanitizeTopicTitle(String title) {
         if (title == null) {
-            throw new IllegalArgumentException("Введите заголовок темы");
+            throw new IllegalArgumentException("Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð·Ð°Ð³Ð¾Ð»Ð¾Ð²Ð¾Ðº Ñ‚ÐµÐ¼Ñ‹");
         }
         String normalized = title.trim();
         if (normalized.length() < 5 || normalized.length() > 120) {
-            throw new IllegalArgumentException("Заголовок темы должен быть от 5 до 120 символов");
+            throw new IllegalArgumentException("Ð—Ð°Ð³Ð¾Ð»Ð¾Ð²Ð¾Ðº Ñ‚ÐµÐ¼Ñ‹ Ð´Ð¾Ð»Ð¶ÐµÐ½ Ð±Ñ‹Ñ‚ÑŒ Ð¾Ñ‚ 5 Ð´Ð¾ 120 ÑÐ¸Ð¼Ð²Ð¾Ð»Ð¾Ð²");
         }
         return normalized;
     }
 
     private String sanitizeTopicDescription(String description) {
         if (description == null) {
-            throw new IllegalArgumentException("Введите описание темы");
+            throw new IllegalArgumentException("Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð¾Ð¿Ð¸ÑÐ°Ð½Ð¸Ðµ Ñ‚ÐµÐ¼Ñ‹");
         }
         String normalized = description.trim();
         if (normalized.length() < 10 || normalized.length() > 1000) {
-            throw new IllegalArgumentException("Описание темы должно быть от 10 до 1000 символов");
+            throw new IllegalArgumentException("ÐžÐ¿Ð¸ÑÐ°Ð½Ð¸Ðµ Ñ‚ÐµÐ¼Ñ‹ Ð´Ð¾Ð»Ð¶Ð½Ð¾ Ð±Ñ‹Ñ‚ÑŒ Ð¾Ñ‚ 10 Ð´Ð¾ 1000 ÑÐ¸Ð¼Ð²Ð¾Ð»Ð¾Ð²");
         }
         return normalized;
     }
@@ -222,15 +235,17 @@ public class ForumStorageService {
                 .map(String::trim)
                 .filter(url -> !url.isBlank())
                 .peek(url -> {
-                    if (!url.matches("^https?://[^\\s\"'<>]+$")) {
-                        throw new IllegalArgumentException("Ссылки на фото должны начинаться с http:// или https://");
+                    boolean isRemote = url.matches("^https?://[^\\s\"'<>]+$");
+                    boolean isLocalUpload = url.matches("^/uploads/[a-zA-Z0-9._\\-/]+$");
+                    if (!isRemote && !isLocalUpload) {
+                        throw new IllegalArgumentException("Image URLs must be http(s) or /uploads/...");
                     }
                 })
                 .distinct()
                 .toList();
 
         if (cleaned.size() > 5) {
-            throw new IllegalArgumentException("Можно прикрепить максимум 5 ссылок на фото");
+            throw new IllegalArgumentException("ÐœÐ¾Ð¶Ð½Ð¾ Ð¿Ñ€Ð¸ÐºÑ€ÐµÐ¿Ð¸Ñ‚ÑŒ Ð¼Ð°ÐºÑÐ¸Ð¼ÑƒÐ¼ 5 ÑÑÑ‹Ð»Ð¾Ðº Ð½Ð° Ñ„Ð¾Ñ‚Ð¾");
         }
 
         return cleaned;
@@ -241,3 +256,4 @@ public class ForumStorageService {
         return AVATAR_COLORS.get(index);
     }
 }
+
