@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 
 @Service
@@ -59,7 +60,7 @@ public class RatingService {
         int cnt = cntNum.intValue();
 
         // округлим до 2 знаков, как в БД numeric(3,2)
-        BigDecimal rounded = BigDecimal.valueOf(avg).setScale(2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal rounded = BigDecimal.valueOf(avg).setScale(2, RoundingMode.HALF_UP);
         game.setRatingAvg(rounded);
         game.setRatingCnt(cnt);
         games.save(game);

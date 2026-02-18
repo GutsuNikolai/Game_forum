@@ -33,7 +33,7 @@ public class GameEntity {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    @Column(name = "rating_avg", nullable = false)
+    @Column(name = "rating_avg", nullable = false, precision = 4, scale = 2)
     private BigDecimal  ratingAvg;
 
     @Column(name = "rating_cnt", nullable = false)

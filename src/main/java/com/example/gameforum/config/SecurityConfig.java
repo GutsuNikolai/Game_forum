@@ -40,12 +40,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/forum/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/games/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/games/*/comments").hasAnyRole("USER", "PUBLISHER", "ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/games/*/rating").hasAnyRole("USER", "PUBLISHER", "ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/forum/**").hasAnyRole("USER", "PUBLISHER", "ADMIN")
                         .requestMatchers(
                                 "/",
                                 "/home",
                                 "/home.html",
                                 "/catalog",
-                                "/catalog.html",
+                                    "/catalog.html",
                                 "/game-topics",
                                 "/game-topics.html",
                                 "/topic-discussion",
@@ -62,11 +65,6 @@ public class SecurityConfig {
                                 "/error",
                                 "/favicon.ico"
                         ).permitAll()
-
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/games/*/comments").hasAnyRole("USER", "PUBLISHER", "ADMIN")
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/games/*/rating").hasAnyRole("USER", "PUBLISHER", "ADMIN")
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/forum/**").hasAnyRole("USER", "PUBLISHER", "ADMIN")
-
                         .requestMatchers("/api/publisher/**").hasAnyRole("PUBLISHER", "ADMIN")
 
                         .requestMatchers(

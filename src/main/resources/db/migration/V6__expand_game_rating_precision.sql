@@ -1,0 +1,2 @@
+ALTER TABLE games
+    ALTER COLUMN rating_avg TYPE NUMERIC(4,2);

@@ -1,11 +1,11 @@
 {
   "Publisher1" : {
-    "avatarUrl" : "/uploads/profile/2ed482211d8847618e4cd3cd1548998e.png",
+    "avatarUrl" : "/uploads/profile/a6761d4378a1429b9faa1d8968f3ba7d.webp",
     "bio" : "Something about me",
     "city" : "Mama I'a v Dubae",
     "favoriteGames" : [ "Dota1", "Dota2", "Dota3" ],
     "emailNotifications" : true,
     "publicProfile" : true,
-    "updatedAt" : "2026-02-18T01:45:41.088368200+02:00"
+    "updatedAt" : "2026-02-18T20:01:51.685274900+02:00"
   }
 }
