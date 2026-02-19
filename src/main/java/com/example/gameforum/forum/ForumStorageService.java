@@ -2,7 +2,7 @@ package com.example.gameforum.forum;
 
 import com.example.gameforum.forum.dto.CreateForumMessageRequest;
 import com.example.gameforum.forum.dto.CreateForumTopicRequest;
-import com.example.gameforum.forum.dto.ForumMessageLikeView;
+import com.example.gameforum.forum.dto.ForumMessageReactionView;
 import com.example.gameforum.forum.dto.ForumMessageView;
 import com.example.gameforum.forum.dto.ForumTopicView;
 import com.example.gameforum.game.GameRepository;
@@ -106,6 +106,7 @@ public class ForumStorageService {
                 .content(sanitizedContent)
                 .imageUrlsText(joinImageUrls(imageUrls))
                 .likes(0)
+                .dislikes(0)
                 .replies(0)
                 .createdAt(now)
                 .build();
@@ -120,7 +121,7 @@ public class ForumStorageService {
     }
 
     @Transactional
-    public ForumMessageLikeView likeMessage(Long messageId) {
+    public ForumMessageReactionView likeMessage(Long messageId) {
         ForumMessageEntity message = messages.findById(messageId)
                 .orElseThrow(() -> new IllegalArgumentException("Ð¡Ð¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ð¾"));
 
@@ -128,7 +129,27 @@ public class ForumStorageService {
         message.setLikes(updatedLikes);
         messages.save(message);
 
-        return new ForumMessageLikeView(message.getId(), updatedLikes);
+        return new ForumMessageReactionView(
+                message.getId(),
+                updatedLikes,
+                message.getDislikes() == null ? 0 : message.getDislikes()
+        );
+    }
+
+    @Transactional
+    public ForumMessageReactionView dislikeMessage(Long messageId) {
+        ForumMessageEntity message = messages.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("ÃÂ¡ÃÂ¾ÃÂ¾ÃÂ±Ã‘â€°ÃÂµÃÂ½ÃÂ¸ÃÂµ ÃÂ½ÃÂµ ÃÂ½ÃÂ°ÃÂ¹ÃÂ´ÃÂµÃÂ½ÃÂ¾"));
+
+        int updatedDislikes = (message.getDislikes() == null ? 0 : message.getDislikes()) + 1;
+        message.setDislikes(updatedDislikes);
+        messages.save(message);
+
+        return new ForumMessageReactionView(
+                message.getId(),
+                message.getLikes() == null ? 0 : message.getLikes(),
+                updatedDislikes
+        );
     }
 
     private ForumTopicView toTopicView(ForumTopicEntity topic) {
@@ -154,6 +175,7 @@ public class ForumStorageService {
                 message.getContent(),
                 splitImageUrls(message.getImageUrlsText()),
                 message.getLikes() == null ? 0 : message.getLikes(),
+                message.getDislikes() == null ? 0 : message.getDislikes(),
                 message.getReplies() == null ? 0 : message.getReplies()
         );
     }

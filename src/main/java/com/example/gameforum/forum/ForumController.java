@@ -3,7 +3,7 @@ package com.example.gameforum.forum;
 import com.example.gameforum.forum.dto.CreateForumMessageRequest;
 import com.example.gameforum.forum.dto.CreateForumTopicRequest;
 import com.example.gameforum.forum.dto.ForumImageUploadView;
-import com.example.gameforum.forum.dto.ForumMessageLikeView;
+import com.example.gameforum.forum.dto.ForumMessageReactionView;
 import com.example.gameforum.forum.dto.ForumMessageView;
 import com.example.gameforum.forum.dto.ForumTopicView;
 import lombok.RequiredArgsConstructor;
@@ -74,7 +74,7 @@ public class ForumController {
     }
 
     @PostMapping("/messages/{messageId}/like")
-    public ResponseEntity<ForumMessageLikeView> likeMessage(
+    public ResponseEntity<ForumMessageReactionView> likeMessage(
             @PathVariable Long messageId,
             Authentication authentication
     ) {
@@ -82,7 +82,20 @@ public class ForumController {
             throw new IllegalArgumentException("Требуется авторизация");
         }
 
-        ForumMessageLikeView updated = storageService.likeMessage(messageId);
+        ForumMessageReactionView updated = storageService.likeMessage(messageId);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PostMapping("/messages/{messageId}/dislike")
+    public ResponseEntity<ForumMessageReactionView> dislikeMessage(
+            @PathVariable Long messageId,
+            Authentication authentication
+    ) {
+        if (authentication == null) {
+            throw new IllegalArgumentException("Ð¢Ñ€ÐµÐ±ÑƒÐµÑ‚ÑÑ Ð°Ð²Ñ‚Ð¾Ñ€Ð¸Ð·Ð°Ñ†Ð¸Ñ");
+        }
+
+        ForumMessageReactionView updated = storageService.dislikeMessage(messageId);
         return ResponseEntity.ok(updated);
     }
 

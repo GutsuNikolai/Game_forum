@@ -37,6 +37,9 @@ public class ForumMessageEntity {
     private Integer likes;
 
     @Column(nullable = false)
+    private Integer dislikes;
+
+    @Column(nullable = false)
     private Integer replies;
 
     @Column(name = "created_at", nullable = false)

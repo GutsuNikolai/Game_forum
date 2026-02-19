@@ -320,7 +320,9 @@
                 const safeAuthor = escapeHtml(message.author || 'Участник форума');
                 const safeDate = escapeHtml(message.date || 'только что');
                 const likes = Number(message.likes ?? 0);
+                const dislikes = Number(message.dislikes ?? 0);
                 const isLiked = hasLikedMessage(topicId, message.id);
+                const isDisliked = hasDislikedMessage(topicId, message.id);
                 const messageImages = (message.imageUrls || [])
                     .map(normalizeImageUrl)
                     .filter(Boolean)
@@ -352,6 +354,10 @@
                         <div class="message-action ${isLiked ? 'is-liked' : ''}" data-action="like" data-message-id="${message.id}">
                             <i class="fas fa-thumbs-up"></i>
                             <span>${likes}</span>
+                        </div>
+                        <div class="message-action ${isDisliked ? 'is-liked' : ''}" data-action="dislike" data-message-id="${message.id}">
+                            <i class="fas fa-thumbs-down"></i>
+                            <span>${dislikes}</span>
                         </div>
                         <div class="message-action" data-action="reply">
                             <i class="fas fa-reply"></i>
@@ -390,6 +396,10 @@
             return `likedTopicMessages:${topicId}`;
         }
 
+        function dislikedMessagesStorageKey(topicId) {
+            return `dislikedTopicMessages:${topicId}`;
+        }
+
         function getLikedMessages(topicId) {
             try {
                 const raw = sessionStorage.getItem(likedMessagesStorageKey(topicId));
@@ -405,10 +415,31 @@
             return liked.has(Number(messageId));
         }
 
+        function getDislikedMessages(topicId) {
+            try {
+                const raw = sessionStorage.getItem(dislikedMessagesStorageKey(topicId));
+                const parsed = raw ? JSON.parse(raw) : [];
+                return new Set(Array.isArray(parsed) ? parsed.map(Number) : []);
+            } catch (_) {
+                return new Set();
+            }
+        }
+
+        function hasDislikedMessage(topicId, messageId) {
+            const disliked = getDislikedMessages(topicId);
+            return disliked.has(Number(messageId));
+        }
+
         function markMessageLiked(topicId, messageId) {
             const liked = getLikedMessages(topicId);
             liked.add(Number(messageId));
             sessionStorage.setItem(likedMessagesStorageKey(topicId), JSON.stringify(Array.from(liked)));
+        }
+
+        function markMessageDisliked(topicId, messageId) {
+            const disliked = getDislikedMessages(topicId);
+            disliked.add(Number(messageId));
+            sessionStorage.setItem(dislikedMessagesStorageKey(topicId), JSON.stringify(Array.from(disliked)));
         }
 
         function bindMessageActionHandlers(topicId) {
@@ -422,7 +453,7 @@
                 if (!actionElement) return;
 
                 const action = actionElement.dataset.action;
-                if (action !== 'like') {
+                if (action !== 'like' && action !== 'dislike') {
                     return;
                 }
 
@@ -436,13 +467,17 @@
                     return;
                 }
 
-                if (hasLikedMessage(topicId, messageId)) {
+                if (action === 'like' && hasLikedMessage(topicId, messageId)) {
+                    return;
+                }
+                if (action === 'dislike' && hasDislikedMessage(topicId, messageId)) {
                     return;
                 }
 
                 actionElement.classList.add('is-loading');
                 try {
-                    const response = await fetch(`/api/forum/messages/${messageId}/like`, {
+                    const endpoint = action === 'dislike' ? 'dislike' : 'like';
+                    const response = await fetch(`/api/forum/messages/${messageId}/${endpoint}`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`
@@ -455,17 +490,31 @@
 
                     const updated = await response.json();
                     const likesValue = Number(updated?.likes ?? NaN);
+                    const dislikesValue = Number(updated?.dislikes ?? NaN);
                     const likesSpan = actionElement.querySelector('span');
-                    if (likesSpan && Number.isFinite(likesValue)) {
-                        likesSpan.textContent = String(likesValue);
-                    } else if (likesSpan) {
-                        likesSpan.textContent = String(Number(likesSpan.textContent || 0) + 1);
+                    if (!likesSpan) {
+                        return;
                     }
 
-                    markMessageLiked(topicId, messageId);
+                    if (action === 'like') {
+                        if (Number.isFinite(likesValue)) {
+                            likesSpan.textContent = String(likesValue);
+                        } else {
+                            likesSpan.textContent = String(Number(likesSpan.textContent || 0) + 1);
+                        }
+                        markMessageLiked(topicId, messageId);
+                    } else if (likesSpan) {
+                        if (Number.isFinite(dislikesValue)) {
+                            likesSpan.textContent = String(dislikesValue);
+                        } else {
+                            likesSpan.textContent = String(Number(likesSpan.textContent || 0) + 1);
+                        }
+                        markMessageDisliked(topicId, messageId);
+                    }
+
                     actionElement.classList.add('is-liked');
                 } catch (error) {
-                    alert(error.message || 'Ошибка при установке лайка');
+                    alert(error.message || 'Ошибка при установке реакции');
                 } finally {
                     actionElement.classList.remove('is-loading');
                 }

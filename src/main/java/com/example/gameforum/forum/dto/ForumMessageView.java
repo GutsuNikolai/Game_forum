@@ -10,6 +10,7 @@ public record ForumMessageView(
         String content,
         List<String> imageUrls,
         int likes,
+        int dislikes,
         int replies
 ) {
 }

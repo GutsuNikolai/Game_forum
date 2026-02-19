@@ -1,0 +1,3 @@
+ALTER TABLE forum_messages
+    ADD COLUMN IF NOT EXISTS dislikes INT NOT NULL DEFAULT 0;
+
