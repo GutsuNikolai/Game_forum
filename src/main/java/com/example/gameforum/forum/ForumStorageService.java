@@ -5,9 +5,11 @@ import com.example.gameforum.forum.dto.CreateForumTopicRequest;
 import com.example.gameforum.forum.dto.ForumMessageReactionView;
 import com.example.gameforum.forum.dto.ForumMessageView;
 import com.example.gameforum.forum.dto.ForumTopicView;
+import com.example.gameforum.forum.dto.UpdateForumMessageRequest;
 import com.example.gameforum.game.GameRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +18,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class ForumStorageService {
@@ -28,6 +32,11 @@ public class ForumStorageService {
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm", Locale.forLanguageTag("ru-RU"));
     private static final String DEFAULT_TOPIC_ICON = "fas fa-comments";
+    private static final int MAX_MESSAGE_LENGTH = 5000;
+    private static final int MAX_TOPIC_TITLE = 120;
+    private static final int MAX_TOPIC_DESCRIPTION = 1000;
+    private static final int MAX_IMAGE_URLS = 5;
+    private static final int MAX_QUOTE_PREVIEW = 180;
 
     private final ForumTopicRepository topics;
     private final ForumMessageRepository messages;
@@ -62,7 +71,7 @@ public class ForumStorageService {
     @Transactional
     public ForumTopicView addTopic(Long gameId, String author, CreateForumTopicRequest request) {
         if (!games.existsById(gameId)) {
-            throw new IllegalArgumentException("Ð˜Ð³Ñ€Ð° Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ð°");
+            throw new IllegalArgumentException("Game not found");
         }
 
         OffsetDateTime now = OffsetDateTime.now();
@@ -82,20 +91,30 @@ public class ForumStorageService {
     }
 
     public List<ForumMessageView> getTopicMessages(Long topicId) {
-        return messages.findByTopicIdOrderByIdAsc(topicId).stream()
-                .map(this::toMessageView)
+        List<ForumMessageEntity> inTopic = messages.findByTopicIdOrderByIdAsc(topicId);
+        Map<Long, ForumMessageEntity> byId = inTopic.stream()
+                .collect(Collectors.toMap(ForumMessageEntity::getId, m -> m));
+
+        return inTopic.stream()
+                .map(message -> toMessageView(message, byId))
                 .toList();
     }
 
     @Transactional
     public ForumMessageView addMessage(Long topicId, String author, CreateForumMessageRequest request) {
         ForumTopicEntity topic = topics.findById(topicId)
-                .orElseThrow(() -> new IllegalArgumentException("Ð¢ÐµÐ¼Ð° Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ð°"));
+                .orElseThrow(() -> new IllegalArgumentException("Topic not found"));
 
         String sanitizedContent = sanitizeMessageContent(request.content());
         List<String> imageUrls = sanitizeImageUrls(request.imageUrls());
         if (sanitizedContent.isBlank() && imageUrls.isEmpty()) {
-            throw new IllegalArgumentException("Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ñ‚ÐµÐºÑÑ‚ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ Ð¸Ð»Ð¸ Ð´Ð¾Ð±Ð°Ð²ÑŒÑ‚Ðµ Ñ…Ð¾Ñ‚Ñ Ð±Ñ‹ Ð¾Ð´Ð½Ñƒ ÑÑÑ‹Ð»ÐºÑƒ Ð½Ð° Ñ„Ð¾Ñ‚Ð¾");
+            throw new IllegalArgumentException("Message must contain text or at least one image");
+        }
+
+        Long parentMessageId = normalizeMessageReference(request.parentMessageId(), topicId);
+        Long quotedMessageId = normalizeMessageReference(request.quotedMessageId(), topicId);
+        if (parentMessageId == null && quotedMessageId != null) {
+            parentMessageId = quotedMessageId;
         }
 
         OffsetDateTime now = OffsetDateTime.now();
@@ -105,25 +124,94 @@ public class ForumStorageService {
                 .avatarColor(pickAvatarColor(author))
                 .content(sanitizedContent)
                 .imageUrlsText(joinImageUrls(imageUrls))
+                .parentMessageId(parentMessageId)
+                .quotedMessageId(quotedMessageId)
                 .likes(0)
                 .dislikes(0)
                 .replies(0)
                 .createdAt(now)
+                .editedAt(null)
                 .build();
 
         ForumMessageEntity saved = messages.save(message);
+
+        if (parentMessageId != null) {
+            messages.findById(parentMessageId).ifPresent(parent -> {
+                parent.setReplies((parent.getReplies() == null ? 0 : parent.getReplies()) + 1);
+                messages.save(parent);
+            });
+        }
 
         topic.setReplies((topic.getReplies() == null ? 0 : topic.getReplies()) + 1);
         topic.setLastActivityAt(now);
         topics.save(topic);
 
-        return toMessageView(saved);
+        return toMessageView(saved, Map.of());
+    }
+
+    @Transactional
+    public ForumMessageView updateMessage(Long messageId, String actorUsername, boolean isAdmin, UpdateForumMessageRequest request) {
+        ForumMessageEntity message = messages.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+
+        if (!isAdmin && !Objects.equals(message.getAuthor(), actorUsername)) {
+            throw new AccessDeniedException("You can edit only your own messages");
+        }
+
+        String sanitizedContent = sanitizeMessageContent(request.content());
+        List<String> imageUrls = sanitizeImageUrls(request.imageUrls());
+        if (sanitizedContent.isBlank() && imageUrls.isEmpty()) {
+            throw new IllegalArgumentException("Message must contain text or at least one image");
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+        message.setContent(sanitizedContent);
+        message.setImageUrlsText(joinImageUrls(imageUrls));
+        message.setEditedAt(now);
+        ForumMessageEntity saved = messages.save(message);
+
+        touchTopicLastActivity(saved.getTopicId(), now);
+        return toMessageView(saved, Map.of());
+    }
+
+    @Transactional
+    public void deleteMessage(Long messageId) {
+        ForumMessageEntity message = messages.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+
+        Long topicId = message.getTopicId();
+        Long parentMessageId = message.getParentMessageId();
+
+        messages.delete(message);
+
+        if (parentMessageId != null) {
+            messages.findById(parentMessageId).ifPresent(parent -> {
+                int currentReplies = parent.getReplies() == null ? 0 : parent.getReplies();
+                parent.setReplies(Math.max(0, currentReplies - 1));
+                messages.save(parent);
+            });
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+        topics.findById(topicId).ifPresent(topic -> {
+            topic.setReplies((int) messages.countByTopicId(topicId));
+            topic.setLastActivityAt(now);
+            topics.save(topic);
+        });
+    }
+
+    @Transactional
+    public void deleteTopic(Long topicId) {
+        if (!topics.existsById(topicId)) {
+            throw new IllegalArgumentException("Topic not found");
+        }
+        topics.deleteById(topicId);
     }
 
     @Transactional
     public ForumMessageReactionView likeMessage(Long messageId) {
         ForumMessageEntity message = messages.findById(messageId)
-                .orElseThrow(() -> new IllegalArgumentException("Ð¡Ð¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ð¾"));
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
 
         int updatedLikes = (message.getLikes() == null ? 0 : message.getLikes()) + 1;
         message.setLikes(updatedLikes);
@@ -139,7 +227,7 @@ public class ForumStorageService {
     @Transactional
     public ForumMessageReactionView dislikeMessage(Long messageId) {
         ForumMessageEntity message = messages.findById(messageId)
-                .orElseThrow(() -> new IllegalArgumentException("ÃÂ¡ÃÂ¾ÃÂ¾ÃÂ±Ã‘â€°ÃÂµÃÂ½ÃÂ¸ÃÂµ ÃÂ½ÃÂµ ÃÂ½ÃÂ°ÃÂ¹ÃÂ´ÃÂµÃÂ½ÃÂ¾"));
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
 
         int updatedDislikes = (message.getDislikes() == null ? 0 : message.getDislikes()) + 1;
         message.setDislikes(updatedDislikes);
@@ -166,7 +254,19 @@ public class ForumStorageService {
         );
     }
 
-    private ForumMessageView toMessageView(ForumMessageEntity message) {
+    private ForumMessageView toMessageView(ForumMessageEntity message, Map<Long, ForumMessageEntity> inTopicById) {
+        ForumMessageEntity quoted = null;
+        Long quotedMessageId = message.getQuotedMessageId();
+        if (quotedMessageId != null) {
+            quoted = inTopicById.get(quotedMessageId);
+            if (quoted == null) {
+                quoted = messages.findById(quotedMessageId).orElse(null);
+            }
+        }
+
+        String quotedAuthor = quoted == null ? null : quoted.getAuthor();
+        String quotedPreview = quoted == null ? null : abbreviate(stripHtml(quoted.getContent()), MAX_QUOTE_PREVIEW);
+
         return new ForumMessageView(
                 message.getId(),
                 message.getAuthor(),
@@ -174,10 +274,37 @@ public class ForumStorageService {
                 formatDate(message.getCreatedAt()),
                 message.getContent(),
                 splitImageUrls(message.getImageUrlsText()),
+                message.getParentMessageId(),
+                quotedMessageId,
+                quotedAuthor,
+                quotedPreview,
                 message.getLikes() == null ? 0 : message.getLikes(),
                 message.getDislikes() == null ? 0 : message.getDislikes(),
-                message.getReplies() == null ? 0 : message.getReplies()
+                message.getReplies() == null ? 0 : message.getReplies(),
+                message.getEditedAt() != null
         );
+    }
+
+    private Long normalizeMessageReference(Long messageId, Long topicId) {
+        if (messageId == null) {
+            return null;
+        }
+
+        ForumMessageEntity referenced = messages.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Referenced message not found"));
+
+        if (!Objects.equals(referenced.getTopicId(), topicId)) {
+            throw new IllegalArgumentException("Referenced message belongs to another topic");
+        }
+
+        return referenced.getId();
+    }
+
+    private void touchTopicLastActivity(Long topicId, OffsetDateTime at) {
+        topics.findById(topicId).ifPresent(topic -> {
+            topic.setLastActivityAt(at);
+            topics.save(topic);
+        });
     }
 
     private String formatDate(OffsetDateTime value) {
@@ -208,30 +335,30 @@ public class ForumStorageService {
             return "";
         }
         String trimmed = content.trim();
-        if (trimmed.length() > 5000) {
-            throw new IllegalArgumentException("Ð¡Ð»Ð¸ÑˆÐºÐ¾Ð¼ Ð´Ð»Ð¸Ð½Ð½Ð¾Ðµ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ (Ð¼Ð°ÐºÑÐ¸Ð¼ÑƒÐ¼ 5000 ÑÐ¸Ð¼Ð²Ð¾Ð»Ð¾Ð²)");
+        if (trimmed.length() > MAX_MESSAGE_LENGTH) {
+            throw new IllegalArgumentException("Message is too long");
         }
         return trimmed;
     }
 
     private String sanitizeTopicTitle(String title) {
         if (title == null) {
-            throw new IllegalArgumentException("Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð·Ð°Ð³Ð¾Ð»Ð¾Ð²Ð¾Ðº Ñ‚ÐµÐ¼Ñ‹");
+            throw new IllegalArgumentException("Topic title is required");
         }
         String normalized = title.trim();
-        if (normalized.length() < 5 || normalized.length() > 120) {
-            throw new IllegalArgumentException("Ð—Ð°Ð³Ð¾Ð»Ð¾Ð²Ð¾Ðº Ñ‚ÐµÐ¼Ñ‹ Ð´Ð¾Ð»Ð¶ÐµÐ½ Ð±Ñ‹Ñ‚ÑŒ Ð¾Ñ‚ 5 Ð´Ð¾ 120 ÑÐ¸Ð¼Ð²Ð¾Ð»Ð¾Ð²");
+        if (normalized.length() < 5 || normalized.length() > MAX_TOPIC_TITLE) {
+            throw new IllegalArgumentException("Topic title must contain 5..120 characters");
         }
         return normalized;
     }
 
     private String sanitizeTopicDescription(String description) {
         if (description == null) {
-            throw new IllegalArgumentException("Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð¾Ð¿Ð¸ÑÐ°Ð½Ð¸Ðµ Ñ‚ÐµÐ¼Ñ‹");
+            throw new IllegalArgumentException("Topic description is required");
         }
         String normalized = description.trim();
-        if (normalized.length() < 10 || normalized.length() > 1000) {
-            throw new IllegalArgumentException("ÐžÐ¿Ð¸ÑÐ°Ð½Ð¸Ðµ Ñ‚ÐµÐ¼Ñ‹ Ð´Ð¾Ð»Ð¶Ð½Ð¾ Ð±Ñ‹Ñ‚ÑŒ Ð¾Ñ‚ 10 Ð´Ð¾ 1000 ÑÐ¸Ð¼Ð²Ð¾Ð»Ð¾Ð²");
+        if (normalized.length() < 10 || normalized.length() > MAX_TOPIC_DESCRIPTION) {
+            throw new IllegalArgumentException("Topic description must contain 10..1000 characters");
         }
         return normalized;
     }
@@ -260,14 +387,14 @@ public class ForumStorageService {
                     boolean isRemote = url.matches("^https?://[^\\s\"'<>]+$");
                     boolean isLocalUpload = url.matches("^/uploads/[a-zA-Z0-9._\\-/]+$");
                     if (!isRemote && !isLocalUpload) {
-                        throw new IllegalArgumentException("Image URLs must be http(s) or /uploads/...");
+                        throw new IllegalArgumentException("Image URL must be http(s) or /uploads/...");
                     }
                 })
                 .distinct()
                 .toList();
 
-        if (cleaned.size() > 5) {
-            throw new IllegalArgumentException("ÐœÐ¾Ð¶Ð½Ð¾ Ð¿Ñ€Ð¸ÐºÑ€ÐµÐ¿Ð¸Ñ‚ÑŒ Ð¼Ð°ÐºÑÐ¸Ð¼ÑƒÐ¼ 5 ÑÑÑ‹Ð»Ð¾Ðº Ð½Ð° Ñ„Ð¾Ñ‚Ð¾");
+        if (cleaned.size() > MAX_IMAGE_URLS) {
+            throw new IllegalArgumentException("Maximum 5 images per message");
         }
 
         return cleaned;
@@ -277,5 +404,24 @@ public class ForumStorageService {
         int index = Math.floorMod(author == null ? 0 : author.hashCode(), AVATAR_COLORS.size());
         return AVATAR_COLORS.get(index);
     }
-}
 
+    private String stripHtml(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        return value.replaceAll("<[^>]*>", " ").replaceAll("\\s+", " ").trim();
+    }
+
+    private String abbreviate(String value, int maxLength) {
+        if (value == null) {
+            return "";
+        }
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        if (maxLength <= 3) {
+            return value.substring(0, Math.max(0, maxLength));
+        }
+        return value.substring(0, maxLength - 3) + "...";
+    }
+}

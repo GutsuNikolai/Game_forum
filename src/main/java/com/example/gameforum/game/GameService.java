@@ -87,4 +87,11 @@ public class GameService {
 
         games.save(g);
     }
+
+    @Transactional
+    public void deleteGame(String slug) {
+        GameEntity game = games.findBySlug(slug)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+        games.delete(game);
+    }
 }

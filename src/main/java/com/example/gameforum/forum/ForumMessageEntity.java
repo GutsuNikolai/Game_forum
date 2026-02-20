@@ -33,6 +33,12 @@ public class ForumMessageEntity {
     @Column(name = "image_urls_text", nullable = false, columnDefinition = "text")
     private String imageUrlsText;
 
+    @Column(name = "parent_message_id")
+    private Long parentMessageId;
+
+    @Column(name = "quoted_message_id")
+    private Long quotedMessageId;
+
     @Column(nullable = false)
     private Integer likes;
 
@@ -44,4 +50,7 @@ public class ForumMessageEntity {
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
+
+    @Column(name = "edited_at")
+    private OffsetDateTime editedAt;
 }

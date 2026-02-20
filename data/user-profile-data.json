@@ -7,5 +7,14 @@
     "emailNotifications" : true,
     "publicProfile" : true,
     "updatedAt" : "2026-02-18T20:01:51.685274900+02:00"
+  },
+  "EMPTY" : {
+    "avatarUrl" : "/uploads/profile/006ad9bb055d4b90aaf7041dafc3d499.png",
+    "bio" : "",
+    "city" : "Не указан",
+    "favoriteGames" : [ ],
+    "emailNotifications" : true,
+    "publicProfile" : true,
+    "updatedAt" : "2026-02-20T11:53:42.251417700+02:00"
   }
 }

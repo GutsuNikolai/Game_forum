@@ -29,6 +29,25 @@
             max-width: 600px;
             margin: 0 auto;
         }
+
+        .catalog-admin-actions {
+            margin-top: 18px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .catalog-admin-btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
         
         .games-container {
             max-width: 1200px;
@@ -63,6 +82,32 @@
             height: 180px;
             width: 100%;
             object-fit: cover;
+        }
+
+        .game-media-wrap {
+            position: relative;
+        }
+
+        .game-delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: 1px solid rgba(255, 107, 107, 0.55);
+            background: rgba(255, 107, 107, 0.3);
+            color: #fff;
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 2;
+            transition: all 0.2s ease;
+        }
+
+        .game-delete-btn:hover {
+            background: rgba(255, 107, 107, 0.45);
         }
         
         .game-info {
@@ -142,6 +187,118 @@
             font-size: 4rem;
             margin-bottom: 20px;
             opacity: 0.5;
+        }
+
+        .topic-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 2500;
+            display: none;
+        }
+
+        .topic-modal.show {
+            display: block;
+        }
+
+        .topic-modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .topic-modal-content {
+            position: relative;
+            margin: 80px auto 20px;
+            width: min(92vw, 640px);
+            padding: 24px;
+            z-index: 1;
+        }
+
+        .topic-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .topic-modal-header h3 {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+        }
+
+        .topic-modal-close {
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .topic-modal-form {
+            display: grid;
+            gap: 10px;
+        }
+
+        .topic-modal-form label {
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+        }
+
+        .topic-modal-form input,
+        .topic-modal-form textarea {
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .topic-modal-form textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .topic-modal-form input:focus,
+        .topic-modal-form textarea:focus {
+            outline: none;
+            border-color: rgba(0, 180, 219, 0.9);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .topic-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .topic-modal-cancel,
+        .topic-modal-submit {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .topic-modal-cancel {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
+        .topic-modal-submit {
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            color: #fff;
         }
         
         .search-filter {

@@ -138,6 +138,7 @@ function resetClientAuthState() {
 function setDesktopGuestActions() {
     const loginBtn = document.getElementById('loginBtn');
     const registerBtn = document.getElementById('registerBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
 
     if (loginBtn) {
         loginBtn.setAttribute('href', '/auth/login.html');
@@ -156,11 +157,16 @@ function setDesktopGuestActions() {
             <span>Регистрация</span>
         `;
     }
+
+    if (logoutBtn) {
+        logoutBtn.style.setProperty('display', 'none', 'important');
+    }
 }
 
 function setDesktopAuthenticatedActions() {
     const loginBtn = document.getElementById('loginBtn');
     const registerBtn = document.getElementById('registerBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
 
     if (loginBtn) {
         loginBtn.setAttribute('href', '/auth/profile.html');
@@ -174,11 +180,16 @@ function setDesktopAuthenticatedActions() {
     if (registerBtn) {
         registerBtn.style.setProperty('display', 'none', 'important');
     }
+
+    if (logoutBtn) {
+        logoutBtn.style.removeProperty('display');
+    }
 }
 
 function setMobileGuestActions() {
     const mobileLoginBtn = document.getElementById('mobileLoginBtn');
     const mobileRegisterBtn = document.getElementById('mobileRegisterBtn');
+    const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
 
     if (mobileLoginBtn) {
         mobileLoginBtn.setAttribute('href', '/auth/login.html');
@@ -196,11 +207,16 @@ function setMobileGuestActions() {
             <span>Регистрация</span>
         `;
     }
+
+    if (mobileLogoutBtn) {
+        mobileLogoutBtn.style.setProperty('display', 'none', 'important');
+    }
 }
 
 function setMobileAuthenticatedActions() {
     const mobileLoginBtn = document.getElementById('mobileLoginBtn');
     const mobileRegisterBtn = document.getElementById('mobileRegisterBtn');
+    const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
 
     if (mobileLoginBtn) {
         mobileLoginBtn.setAttribute('href', '/auth/profile.html');
@@ -212,6 +228,10 @@ function setMobileAuthenticatedActions() {
 
     if (mobileRegisterBtn) {
         mobileRegisterBtn.style.setProperty('display', 'none', 'important');
+    }
+
+    if (mobileLogoutBtn) {
+        mobileLogoutBtn.style.removeProperty('display');
     }
 }
 
@@ -267,6 +287,40 @@ function setHeaderAuthenticatedState(username, role) {
     setMobileAuthenticatedActions();
 }
 
+function performClientLogout(event) {
+    if (event) {
+        event.preventDefault();
+    }
+
+    resetClientAuthState();
+    setHeaderGuestState();
+    updateHeaderLayout();
+
+    const mobileMenu = document.getElementById('mobileMenu');
+    if (mobileMenu) {
+        mobileMenu.classList.remove('show');
+    }
+    document.body.style.overflow = '';
+
+    window.location.href = '/home.html';
+}
+
+function bindLogoutButtons() {
+    const logoutButtons = [
+        document.getElementById('logoutBtn'),
+        document.getElementById('mobileLogoutBtn'),
+        document.querySelector('.header-profile-logout')
+    ].filter(Boolean);
+
+    logoutButtons.forEach((button) => {
+        if (button.dataset.bound === 'true') {
+            return;
+        }
+        button.addEventListener('click', performClientLogout);
+        button.dataset.bound = 'true';
+    });
+}
+
 async function initializeHeaderAuthState() {
     const headerContainer = document.querySelector('.header-container');
     if (!headerContainer) {
@@ -313,6 +367,7 @@ async function initializeHeaderAuthState() {
 function initializeHeader() {
     initializeHeaderLayout();
     initializeMobileMenu();
+    bindLogoutButtons();
     initializeHeaderAuthState();
 }
 

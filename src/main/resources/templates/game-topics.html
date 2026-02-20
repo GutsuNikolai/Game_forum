@@ -152,6 +152,7 @@
         let currentGameRatingCnt = 0;
         let myGameRating = null;
         let isCreatingTopic = false;
+        let currentViewer = { authenticated: false, username: '', role: 'GUEST' };
         
         // Резервные темы для игр (используются, если API недоступен)
         const fallbackGameTopics = {
@@ -287,6 +288,41 @@
             loadGameTopics(currentGameId);
         }
 
+        async function loadCurrentViewer() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                currentViewer = { authenticated: false, username: '', role: 'GUEST' };
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Unauthorized');
+                }
+
+                const data = await response.json();
+                if (!data?.authenticated) {
+                    throw new Error('Unauthorized');
+                }
+
+                currentViewer = {
+                    authenticated: true,
+                    username: data.username || '',
+                    role: String(data.role || 'USER').toUpperCase()
+                };
+            } catch (_) {
+                currentViewer = { authenticated: false, username: '', role: 'GUEST' };
+            }
+        }
+
+        function canDeleteTopics() {
+            return currentViewer.role === 'ADMIN';
+        }
+
         function ratingStorageKey(slug) {
             return `myGameRating:${slug}`;
         }
@@ -408,6 +444,16 @@
                 const author = escapeHtml(topic.author || 'Участник форума');
                 const title = escapeHtml(topic.title || 'Тема без названия');
                 const description = escapeHtml(topic.description || 'Без описания');
+                const adminActions = canDeleteTopics()
+                    ? `
+                        <div class="topic-admin-actions">
+                            <button type="button" class="topic-delete-btn" data-topic-id="${topic.id}" data-topic-title="${title}">
+                                <i class="fas fa-trash-alt"></i>
+                                Удалить
+                            </button>
+                        </div>
+                    `
+                    : '';
                 
                 topicCard.innerHTML = `
                     <div class="topic-icon">
@@ -431,11 +477,21 @@
                             <span><i class="fas fa-clock"></i> ${lastActivity}</span>
                         </div>
                     </div>
+                    ${adminActions}
                 `;
                 
                 // Добавляем обработчик клика
                 topicCard.addEventListener('click', () => {
                     openTopic(topic.id, topic.title);
+                });
+
+                topicCard.querySelector('.topic-delete-btn')?.addEventListener('click', async function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const topicId = Number(this.dataset.topicId || 0);
+                    const topicTitle = this.dataset.topicTitle || 'Тема';
+                    if (!topicId) return;
+                    await deleteTopicAsAdmin(topicId, topicTitle);
                 });
                 
                 topicsList.appendChild(topicCard);
@@ -452,9 +508,53 @@
             // Переходим на страницу обсуждения
             window.location.href = `/topic-discussion.html?topic=${topicId}`;
         }
+
+        async function deleteTopicAsAdmin(topicId, topicTitle) {
+            if (!canDeleteTopics()) {
+                notify('Удалять темы может только администратор', 'warning');
+                return;
+            }
+
+            const shouldDelete = confirm(`Удалить тему "${topicTitle}"? Это действие необратимо.`);
+            if (!shouldDelete) {
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/auth/login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/forum/topics/${topicId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    let message = 'Не удалось удалить тему';
+                    try {
+                        const payload = await response.json();
+                        message = payload.message || message;
+                    } catch (_) {
+                        // ignore parse errors
+                    }
+                    throw new Error(message);
+                }
+
+                notify('Тема удалена', 'success');
+                await loadGameTopics(currentGameId);
+            } catch (error) {
+                notify(error.message || 'Ошибка удаления темы', 'error');
+            }
+        }
         
         // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadCurrentViewer();
             // Загружаем данные игры
             loadGameData();
             

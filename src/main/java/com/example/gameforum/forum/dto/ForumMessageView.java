@@ -9,8 +9,13 @@ public record ForumMessageView(
         String date,
         String content,
         List<String> imageUrls,
+        Long parentMessageId,
+        Long quotedMessageId,
+        String quotedAuthor,
+        String quotedPreview,
         int likes,
         int dislikes,
-        int replies
+        int replies,
+        boolean edited
 ) {
 }

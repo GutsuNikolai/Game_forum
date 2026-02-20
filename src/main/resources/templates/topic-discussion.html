@@ -56,6 +56,10 @@
             <div class="reply-form-container" id="replyFormContainer">
                 <h3>Ваш ответ</h3>
                 <form class="reply-form" id="replyForm">
+                    <div class="reply-context" id="replyContextBanner">
+                        <span id="replyContextText">Ответ на сообщение</span>
+                        <button type="button" id="clearReplyContext">Сбросить</button>
+                    </div>
                     <div class="reply-toolbar" id="replyToolbar">
                         <button type="button" class="editor-tool" data-command="bold" title="Жирный">
                             <i class="fas fa-bold"></i>
@@ -186,6 +190,12 @@
                 }
             ]
         };
+        let currentViewer = { authenticated: false, username: '', role: 'GUEST' };
+        let currentTopicId = 0;
+        let replyContext = { parentMessageId: null, quotedMessageId: null, mode: null, author: '' };
+        let editingMessageId = null;
+        let editingOriginalImages = [];
+        let latestMessages = [];
 
         function sanitizeMessageHtml(rawHtml) {
             if (!rawHtml) return '';
@@ -227,11 +237,52 @@
             const isLocal = /^\/[^\s"'<>]+$/.test(normalized);
             return (isRemote || isLocal) ? normalized : null;
         }
+
+        async function loadCurrentViewer() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                currentViewer = { authenticated: false, username: '', role: 'GUEST' };
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    throw new Error('Unauthorized');
+                }
+                const payload = await response.json();
+                if (!payload?.authenticated) {
+                    throw new Error('Unauthorized');
+                }
+
+                currentViewer = {
+                    authenticated: true,
+                    username: payload.username || '',
+                    role: String(payload.role || 'USER').toUpperCase()
+                };
+            } catch (_) {
+                currentViewer = { authenticated: false, username: '', role: 'GUEST' };
+            }
+        }
+
+        function canModerateMessages() {
+            return currentViewer.role === 'ADMIN';
+        }
+
+        function canEditMessage(message) {
+            if (canModerateMessages()) {
+                return true;
+            }
+            return currentViewer.authenticated && String(currentViewer.username || '') === String(message.author || '');
+        }
         
         // Функция загрузки данных темы
         async function loadTopicData() {
             const urlParams = new URLSearchParams(window.location.search);
             const topicId = Number(urlParams.get('topic') || sessionStorage.getItem('currentTopicId') || 101);
+            currentTopicId = topicId;
             const fallbackTopicTitle = sessionStorage.getItem('currentTopicTitle') || `Тема #${topicId}`;
             let topic = topicData[topicId] || {
                 title: fallbackTopicTitle,
@@ -278,7 +329,7 @@
             document.getElementById('backToTopics').href = `/game-topics.html?game=${sessionStorage.getItem('currentGameId') || 1}`;
             
             // Загружаем сообщения
-            loadTopicMessages(topicId);
+            await loadTopicMessages(topicId);
         }
         
         // Функция загрузки сообщений
@@ -297,6 +348,7 @@
                 console.warn('API форума недоступен, загружаем резервные сообщения', error);
                 messages = fallbackTopicMessages[topicId] || [];
             }
+            latestMessages = Array.isArray(messages) ? messages : [];
 
             messagesList.innerHTML = '';
             document.getElementById('repliesCount').textContent = String(messages.length);
@@ -319,10 +371,19 @@
                 const safeContent = sanitizeMessageHtml(message.content || '');
                 const safeAuthor = escapeHtml(message.author || 'Участник форума');
                 const safeDate = escapeHtml(message.date || 'только что');
+                const isEdited = Boolean(message.edited);
+                const editedSuffix = isEdited ? ' (изменено)' : '';
                 const likes = Number(message.likes ?? 0);
                 const dislikes = Number(message.dislikes ?? 0);
                 const isLiked = hasLikedMessage(topicId, message.id);
                 const isDisliked = hasDislikedMessage(topicId, message.id);
+                const canEdit = canEditMessage(message);
+                const canDelete = canModerateMessages();
+                const quotedAuthor = escapeHtml(message.quotedAuthor || 'Участник');
+                const quotedPreview = escapeHtml(message.quotedPreview || 'Цитата недоступна');
+                const quoteBlock = message.quotedMessageId
+                    ? `<div class="message-quote-ref"><strong>${quotedAuthor}:</strong> ${quotedPreview}</div>`
+                    : '';
                 const messageImages = (message.imageUrls || [])
                     .map(normalizeImageUrl)
                     .filter(Boolean)
@@ -343,9 +404,10 @@
                         </div>
                         <div class="user-info">
                             <h4>${safeAuthor}</h4>
-                            <p>${safeDate}</p>
+                            <p>${safeDate}${editedSuffix}</p>
                         </div>
                     </div>
+                    ${quoteBlock}
                     <div class="message-content">
                         ${safeContent}
                     </div>
@@ -367,6 +429,18 @@
                             <i class="fas fa-quote-right"></i>
                             <span>Цитировать</span>
                         </div>
+                        ${canEdit ? `
+                            <div class="message-action" data-action="edit">
+                                <i class="fas fa-pen"></i>
+                                <span>Редактировать</span>
+                            </div>
+                        ` : ''}
+                        ${canDelete ? `
+                            <div class="message-action danger" data-action="delete">
+                                <i class="fas fa-trash-alt"></i>
+                                <span>Удалить</span>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
 
@@ -453,12 +527,38 @@
                 if (!actionElement) return;
 
                 const action = actionElement.dataset.action;
-                if (action !== 'like' && action !== 'dislike') {
+                const messageCard = actionElement.closest('.message-card');
+                const messageId = Number(actionElement.dataset.messageId || messageCard?.dataset.id || 0);
+                if (!messageId) return;
+                const message = latestMessages.find(item => Number(item.id) === messageId) || null;
+
+                if (action === 'reply') {
+                    if (!message) return;
+                    startReplyToMessage(message, false);
                     return;
                 }
 
-                const messageId = Number(actionElement.dataset.messageId || 0);
-                if (!messageId) return;
+                if (action === 'quote') {
+                    if (!message) return;
+                    startReplyToMessage(message, true);
+                    return;
+                }
+
+                if (action === 'edit') {
+                    if (!message) return;
+                    startEditingMessage(message);
+                    return;
+                }
+
+                if (action === 'delete') {
+                    if (!message) return;
+                    await deleteMessageAsAdmin(topicId, message);
+                    return;
+                }
+
+                if (action !== 'like' && action !== 'dislike') {
+                    return;
+                }
 
                 const token = localStorage.getItem('token');
                 if (!token) {
@@ -522,21 +622,191 @@
 
             messagesList.dataset.actionsBound = 'true';
         }
+
+        function getComposerTitleElement() {
+            return document.querySelector('#replyFormContainer h3');
+        }
+
+        function updateComposerContextBanner() {
+            const banner = document.getElementById('replyContextBanner');
+            const text = document.getElementById('replyContextText');
+            const title = getComposerTitleElement();
+            if (!banner || !text) {
+                return;
+            }
+
+            if (editingMessageId) {
+                text.textContent = `Редактирование сообщения #${editingMessageId}`;
+                banner.classList.add('show');
+                if (title) {
+                    title.textContent = 'Редактирование сообщения';
+                }
+                return;
+            }
+
+            const hasReplyContext = Boolean(replyContext.parentMessageId || replyContext.quotedMessageId);
+            if (hasReplyContext) {
+                const actionText = replyContext.mode === 'quote' ? 'Цитирование' : 'Ответ';
+                const authorText = replyContext.author ? ` для ${replyContext.author}` : '';
+                text.textContent = `${actionText}${authorText}`;
+                banner.classList.add('show');
+                if (title) {
+                    title.textContent = 'Ваш ответ';
+                }
+                return;
+            }
+
+            banner.classList.remove('show');
+            if (title) {
+                title.textContent = 'Ваш ответ';
+            }
+        }
+
+        function resetComposerContext() {
+            replyContext = { parentMessageId: null, quotedMessageId: null, mode: null, author: '' };
+            editingMessageId = null;
+            editingOriginalImages = [];
+            updateComposerContextBanner();
+        }
+
+        function focusReplyComposer() {
+            const editor = document.getElementById('replyTextEditor');
+            editor?.focus();
+            document.getElementById('replyFormContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function getPlainMessageText(rawHtml) {
+            const temp = document.createElement('div');
+            temp.innerHTML = sanitizeMessageHtml(rawHtml || '');
+            return (temp.textContent || '').replace(/\s+/g, ' ').trim();
+        }
+
+        function prependQuoteToEditor(author, content) {
+            const editor = document.getElementById('replyTextEditor');
+            if (!editor) {
+                return;
+            }
+
+            const plain = getPlainMessageText(content);
+            const quoteText = plain.length > 240 ? `${plain.slice(0, 237)}...` : plain;
+            const quoteHtml = `<blockquote><strong>${escapeHtml(author)}:</strong> ${escapeHtml(quoteText)}</blockquote><p><br></p>`;
+            editor.innerHTML = `${quoteHtml}${editor.innerHTML}`;
+        }
+
+        function startReplyToMessage(message, includeQuote) {
+            if (!currentViewer.authenticated) {
+                alert('Войдите в аккаунт, чтобы отвечать в теме');
+                window.location.href = '/auth/login.html';
+                return;
+            }
+
+            editingMessageId = null;
+            editingOriginalImages = [];
+            replyContext = {
+                parentMessageId: Number(message.id || 0) || null,
+                quotedMessageId: includeQuote ? (Number(message.id || 0) || null) : null,
+                mode: includeQuote ? 'quote' : 'reply',
+                author: message.author || ''
+            };
+
+            if (includeQuote) {
+                prependQuoteToEditor(message.author || 'Участник', message.content || '');
+            } else {
+                const editor = document.getElementById('replyTextEditor');
+                if (editor && editor.innerHTML.trim() === '') {
+                    editor.innerHTML = `<p>@${escapeHtml(message.author || 'user')}, </p>`;
+                }
+            }
+
+            updateComposerContextBanner();
+            focusReplyComposer();
+        }
+
+        function startEditingMessage(message) {
+            if (!canEditMessage(message)) {
+                alert('Вы можете редактировать только свои сообщения');
+                return;
+            }
+
+            editingMessageId = Number(message.id || 0) || null;
+            editingOriginalImages = (message.imageUrls || [])
+                .map(normalizeImageUrl)
+                .filter(Boolean);
+            replyContext = { parentMessageId: null, quotedMessageId: null, mode: null, author: '' };
+
+            const editor = document.getElementById('replyTextEditor');
+            if (editor) {
+                editor.innerHTML = sanitizeMessageHtml(message.content || '');
+            }
+
+            updateComposerContextBanner();
+            focusReplyComposer();
+        }
+
+        async function deleteMessageAsAdmin(topicId, message) {
+            if (!canModerateMessages()) {
+                alert('Удалять сообщения может только администратор');
+                return;
+            }
+
+            const messageId = Number(message?.id || 0);
+            if (!messageId) {
+                return;
+            }
+
+            const shouldDelete = confirm('Удалить это сообщение?');
+            if (!shouldDelete) {
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/auth/login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/forum/messages/${messageId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    let messageText = 'Не удалось удалить сообщение';
+                    try {
+                        const payload = await response.json();
+                        messageText = payload.message || messageText;
+                    } catch (_) {
+                        // ignore parse errors
+                    }
+                    throw new Error(messageText);
+                }
+
+                await loadTopicMessages(topicId);
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification('Сообщение удалено', 'success');
+                }
+            } catch (error) {
+                alert(error.message || 'Ошибка удаления сообщения');
+            }
+        }
         
         // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            // Загружаем данные темы
-            loadTopicData();
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadCurrentViewer();
+            await loadTopicData();
             
             // Проверяем авторизацию для формы ответа
-            const isLoggedIn = Boolean(localStorage.getItem('token'));
+            const isLoggedIn = currentViewer.authenticated;
             const replyEditor = document.getElementById('replyTextEditor');
             const replyText = document.getElementById('replyText');
             const submitReply = document.getElementById('submitReply');
             const attachImageBtn = document.getElementById('attachImageBtn');
             const attachImageInput = document.getElementById('attachImageInput');
             const replyImagePreview = document.getElementById('replyImagePreview');
-            const currentTopicId = Number(
+            const activeTopicId = Number(
                 new URLSearchParams(window.location.search).get('topic')
                 || sessionStorage.getItem('currentTopicId')
                 || 101
@@ -546,7 +816,11 @@
 
             initializeReplyEditor();
             initializeImageAttachments();
-            bindMessageActionHandlers(currentTopicId);
+            bindMessageActionHandlers(activeTopicId);
+            updateComposerContextBanner();
+            document.getElementById('clearReplyContext')?.addEventListener('click', function() {
+                resetComposerContext();
+            });
             
             if (!isLoggedIn) {
                 replyEditor.setAttribute('contenteditable', 'false');
@@ -578,7 +852,7 @@
                     const replyPlainText = extractPlainText(replyHtml);
                     replyText.value = replyHtml;
                     
-                    if (!replyPlainText && attachedImages.length === 0) {
+                    if (!replyPlainText && attachedImages.length === 0 && editingOriginalImages.length === 0) {
                         alert('Введите текст ответа или прикрепите фото');
                         return;
                     }
@@ -590,15 +864,26 @@
 
                     try {
                         const token = localStorage.getItem('token');
-                        const response = await fetch(`/api/forum/topics/${currentTopicId}/messages`, {
-                            method: 'POST',
+                        const uploadedImages = attachedImages.map(image => image.url);
+                        const imageUrlsToSend = editingMessageId
+                            ? Array.from(new Set([...editingOriginalImages, ...uploadedImages]))
+                            : uploadedImages;
+                        const endpoint = editingMessageId
+                            ? `/api/forum/messages/${editingMessageId}`
+                            : `/api/forum/topics/${activeTopicId}/messages`;
+                        const method = editingMessageId ? 'PATCH' : 'POST';
+
+                        const response = await fetch(endpoint, {
+                            method,
                             headers: {
                                 'Content-Type': 'application/json',
                                 ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                             },
                             body: JSON.stringify({
                                 content: replyHtml,
-                                imageUrls: attachedImages.map(image => image.url)
+                                imageUrls: imageUrlsToSend,
+                                parentMessageId: editingMessageId ? null : replyContext.parentMessageId,
+                                quotedMessageId: editingMessageId ? null : replyContext.quotedMessageId
                             })
                         });
 
@@ -616,7 +901,8 @@
                         replyEditor.innerHTML = '';
                         replyText.value = '';
                         clearAttachedImages();
-                        await loadTopicMessages(currentTopicId);
+                        resetComposerContext();
+                        await loadTopicMessages(activeTopicId);
                     } catch (error) {
                         alert(error.message || 'Ошибка при отправке сообщения');
                     } finally {
@@ -631,6 +917,7 @@
                 replyEditor.innerHTML = '';
                 replyText.value = '';
                 clearAttachedImages();
+                resetComposerContext();
             });
 
             function initializeReplyEditor() {

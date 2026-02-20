@@ -22,6 +22,12 @@
         <section class="page-header">
             <h1 class="page-title">Каталог игр</h1>
             <p class="page-subtitle">Ищите игры по жанрам, обсуждайте с сообществом, делитесь опытом и находите единомышленников</p>
+            <div class="catalog-admin-actions" id="catalogAdminActions" style="display: none;">
+                <button type="button" class="catalog-admin-btn" id="addGameBtn">
+                    <i class="fas fa-plus"></i>
+                    Добавить игру
+                </button>
+            </div>
         </section>
         
         <!-- Поиск и фильтры -->
@@ -54,6 +60,40 @@
                 <p>Попробуйте изменить параметры поиска</p>
             </div>
         </section>
+
+        <div class="topic-modal" id="gameModal">
+            <div class="topic-modal-overlay" id="gameModalOverlay"></div>
+            <div class="topic-modal-content glass-panel">
+                <div class="topic-modal-header">
+                    <h3><i class="fas fa-gamepad"></i> Добавить игру</h3>
+                    <button type="button" class="topic-modal-close" id="closeGameModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="createGameForm" class="topic-modal-form">
+                    <label for="newGameSlug">Slug</label>
+                    <input type="text" id="newGameSlug" maxlength="80" required placeholder="Например: valorant">
+
+                    <label for="newGameTitle">Название</label>
+                    <input type="text" id="newGameTitle" maxlength="120" required placeholder="Например: Valorant">
+
+                    <label for="newGameDescription">Описание</label>
+                    <textarea id="newGameDescription" maxlength="5000" placeholder="Краткое описание игры"></textarea>
+
+                    <label for="newGameCoverUrl">Cover URL</label>
+                    <input type="text" id="newGameCoverUrl" maxlength="500" placeholder="/img/covers/cs2.jpg или https://...">
+
+                    <div class="topic-modal-actions">
+                        <button type="button" class="topic-modal-cancel" id="cancelGameCreate">Отмена</button>
+                        <button type="submit" class="topic-modal-submit" id="submitGameCreate">
+                            <i class="fas fa-plus"></i>
+                            Создать игру
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </main>
     
     <!-- Футер -->
@@ -63,6 +103,8 @@
     <script src="/static/js/script.js"></script>
         <script>
         let allGames = [];
+        let currentViewer = { authenticated: false, username: '', role: 'GUEST' };
+        const validFilters = new Set(['all', 'shooter', 'rpg', 'strategy', 'adventure', 'sports', 'simulator']);
 
         const genreNames = {
             shooter: 'Шутер',
@@ -90,6 +132,30 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        function getLocalCoverFallback(slug = '', title = '') {
+            const key = `${slug} ${title}`.toLowerCase();
+            if (key.includes('dota')) return '/img/covers/dota2.jpg';
+            if (key.includes('counter-strike') || key.includes('cs2')) return '/img/covers/cs2.jpg';
+            if (key.includes('league of legends') || key.includes('lol')) return '/img/covers/lol.jpg';
+            return '/img/covers/cs2.jpg';
+        }
+
+        function resolveCoverUrls(item) {
+            const fallback = getLocalCoverFallback(item?.slug || '', item?.title || '');
+            const coverUrl = typeof item?.coverUrl === 'string' ? item.coverUrl.trim() : '';
+
+            if (!coverUrl) {
+                return { image: fallback, fallback };
+            }
+
+            // В сид-данных могли остаться demo-ссылки example.com, для них сразу используем локальный cover.
+            if (/^https?:\/\/example\.com\//i.test(coverUrl)) {
+                return { image: fallback, fallback };
+            }
+
+            return { image: coverUrl, fallback };
         }
 
         function generateStars(rating) {
@@ -133,15 +199,57 @@
             const items = Array.isArray(payload?.items) ? payload.items : [];
             const topicCounts = await Promise.all(items.map(item => fetchTopicCount(item.id)));
 
-            return items.map((item, index) => ({
-                id: item.id,
-                title: item.title || `Game #${item.id}`,
-                description: item.description || 'Описание временно отсутствует',
-                image: item.coverUrl || '/img/covers/cs2.jpg',
-                rating: Number(item.ratingAvg || 0),
-                genre: inferGenre(item.title, item.description),
-                topics: topicCounts[index] || 0
-            }));
+            return items.map((item, index) => {
+                const covers = resolveCoverUrls(item);
+                return {
+                    id: item.id,
+                    slug: item.slug || '',
+                    title: item.title || `Game #${item.id}`,
+                    description: item.description || 'Описание временно отсутствует',
+                    image: covers.image,
+                    fallbackImage: covers.fallback,
+                    rating: Number(item.ratingAvg || 0),
+                    genre: inferGenre(item.title, item.description),
+                    topics: topicCounts[index] || 0
+                };
+            });
+        }
+
+        async function loadCurrentViewer() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                currentViewer = { authenticated: false, username: '', role: 'GUEST' };
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    throw new Error('Unauthorized');
+                }
+                const payload = await response.json();
+                if (!payload?.authenticated) {
+                    throw new Error('Unauthorized');
+                }
+
+                currentViewer = {
+                    authenticated: true,
+                    username: payload.username || '',
+                    role: String(payload.role || 'USER').toUpperCase()
+                };
+            } catch (_) {
+                currentViewer = { authenticated: false, username: '', role: 'GUEST' };
+            }
+        }
+
+        function canManageGames() {
+            return currentViewer.role === 'ADMIN' || currentViewer.role === 'PUBLISHER';
+        }
+
+        function canDeleteGames() {
+            return currentViewer.role === 'ADMIN';
         }
 
         function renderGames(gamesToRender) {
@@ -162,8 +270,18 @@
                 const safeDescription = escapeHtml(game.description);
                 const safeGenre = escapeHtml(genreNames[game.genre] || game.genre || 'RPG');
                 const imageUrl = escapeHtml(game.image);
+                const fallbackImageUrl = escapeHtml(game.fallbackImage || '/img/covers/cs2.jpg');
+                const gameSlug = escapeHtml(game.slug || '');
                 const topics = Number(game.topics || 0);
                 const rating = Number(game.rating || 0);
+                const deleteButton = canDeleteGames()
+                    ? `
+                        <button type="button" class="game-delete-btn" data-game-slug="${gameSlug}" data-game-title="${safeTitle}">
+                            <i class="fas fa-trash-alt"></i>
+                            Удалить
+                        </button>
+                    `
+                    : '';
 
                 const gameCard = document.createElement('div');
                 gameCard.className = 'game-card';
@@ -171,7 +289,10 @@
                 gameCard.dataset.genre = game.genre;
 
                 gameCard.innerHTML = `
-                    <img src="${imageUrl}" alt="${safeTitle}" class="game-image" onerror="this.src='/img/covers/cs2.jpg'">
+                    <div class="game-media-wrap">
+                        <img src="${imageUrl}" alt="${safeTitle}" class="game-image" onerror="this.onerror=null;this.src='${fallbackImageUrl}'">
+                        ${deleteButton}
+                    </div>
                     <div class="game-info">
                         <span class="game-genre">${safeGenre}</span>
                         <h3 class="game-title">${safeTitle}</h3>
@@ -193,6 +314,12 @@
 
                 gameCard.addEventListener('click', () => {
                     openGameTopics(game.id, game.title);
+                });
+
+                gameCard.querySelector('.game-delete-btn')?.addEventListener('click', async (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    await deleteGameAsAdmin(game.slug, game.title);
                 });
 
                 gamesGrid.appendChild(gameCard);
@@ -225,6 +352,193 @@
             renderGames(filtered);
         }
 
+        function applyFilterTag(filterValue) {
+            const normalized = validFilters.has(filterValue) ? filterValue : 'all';
+            const tags = document.querySelectorAll('.filter-tag');
+            tags.forEach(tag => {
+                tag.classList.toggle('active', tag.dataset.filter === normalized);
+            });
+        }
+
+        function getInitialFilterFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const raw = (params.get('category') || params.get('filter') || 'all').toLowerCase().trim();
+            return validFilters.has(raw) ? raw : 'all';
+        }
+
+        function openGameModal() {
+            const modal = document.getElementById('gameModal');
+            if (!modal) return;
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeGameModal() {
+            const modal = document.getElementById('gameModal');
+            if (!modal) return;
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+            document.getElementById('createGameForm')?.reset();
+        }
+
+        function setupCatalogAdminActions() {
+            const actions = document.getElementById('catalogAdminActions');
+            const addGameBtn = document.getElementById('addGameBtn');
+            const createGameForm = document.getElementById('createGameForm');
+
+            if (canManageGames()) {
+                actions?.style.removeProperty('display');
+            } else if (actions) {
+                actions.style.display = 'none';
+            }
+
+            addGameBtn?.addEventListener('click', () => {
+                if (!canManageGames()) return;
+                openGameModal();
+            });
+
+            document.getElementById('closeGameModal')?.addEventListener('click', closeGameModal);
+            document.getElementById('cancelGameCreate')?.addEventListener('click', closeGameModal);
+            document.getElementById('gameModalOverlay')?.addEventListener('click', closeGameModal);
+            createGameForm?.addEventListener('submit', handleCreateGame);
+        }
+
+        function normalizeSlug(value) {
+            return String(value || '')
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+
+        async function handleCreateGame(event) {
+            event.preventDefault();
+            if (!canManageGames()) {
+                alert('Добавлять игры могут только издатель или администратор');
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/auth/login.html';
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitGameCreate');
+            const originalHtml = submitBtn?.innerHTML || '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Создание...';
+            }
+
+            const slug = normalizeSlug(document.getElementById('newGameSlug')?.value);
+            const title = (document.getElementById('newGameTitle')?.value || '').trim();
+            const description = (document.getElementById('newGameDescription')?.value || '').trim();
+            const coverUrl = (document.getElementById('newGameCoverUrl')?.value || '').trim();
+
+            if (!slug || slug.length < 2) {
+                alert('Введите корректный slug (минимум 2 символа)');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHtml;
+                }
+                return;
+            }
+
+            if (!title || title.length < 2) {
+                alert('Введите название игры (минимум 2 символа)');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHtml;
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/publisher/games', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ slug, title, description, coverUrl })
+                });
+
+                if (!response.ok) {
+                    let message = 'Не удалось создать игру';
+                    try {
+                        const payload = await response.json();
+                        message = payload.message || message;
+                    } catch (_) {
+                        // ignore parse errors
+                    }
+                    throw new Error(message);
+                }
+
+                closeGameModal();
+                await initializeCatalog();
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification('Игра добавлена', 'success');
+                }
+            } catch (error) {
+                alert(error.message || 'Ошибка создания игры');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHtml;
+                }
+            }
+        }
+
+        async function deleteGameAsAdmin(slug, title) {
+            if (!canDeleteGames()) {
+                alert('Удалять игры может только администратор');
+                return;
+            }
+            if (!slug) {
+                alert('Невозможно удалить игру без slug');
+                return;
+            }
+
+            const shouldDelete = confirm(`Удалить игру "${title}"?`);
+            if (!shouldDelete) {
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/auth/login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/publisher/games/${encodeURIComponent(slug)}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    let message = 'Не удалось удалить игру';
+                    try {
+                        const payload = await response.json();
+                        message = payload.message || message;
+                    } catch (_) {
+                        // ignore parse errors
+                    }
+                    throw new Error(message);
+                }
+
+                await initializeCatalog();
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification('Игра удалена', 'success');
+                }
+            } catch (error) {
+                alert(error.message || 'Ошибка удаления игры');
+            }
+        }
+
         async function initializeCatalog() {
             try {
                 allGames = await loadGamesFromApi();
@@ -235,19 +549,21 @@
             filterGames();
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadCurrentViewer();
             document.getElementById('gameSearch').addEventListener('input', filterGames);
 
             document.querySelectorAll('.filter-tag').forEach(tag => {
                 tag.addEventListener('click', function() {
-                    document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
+                    applyFilterTag(this.dataset.filter || 'all');
                     filterGames();
                 });
             });
 
+            applyFilterTag(getInitialFilterFromUrl());
+            setupCatalogAdminActions();
             loadHeaderAndFooter();
-            initializeCatalog();
+            await initializeCatalog();
         });
 
         function loadHeaderAndFooter() {

@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface ForumMessageRepository extends JpaRepository<ForumMessageEntity, Long> {
     List<ForumMessageEntity> findByTopicIdOrderByIdAsc(Long topicId);
+    long countByTopicId(Long topicId);
     long countByAuthor(String author);
 }

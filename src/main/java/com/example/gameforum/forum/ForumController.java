@@ -6,11 +6,14 @@ import com.example.gameforum.forum.dto.ForumImageUploadView;
 import com.example.gameforum.forum.dto.ForumMessageReactionView;
 import com.example.gameforum.forum.dto.ForumMessageView;
 import com.example.gameforum.forum.dto.ForumTopicView;
+import com.example.gameforum.forum.dto.UpdateForumMessageRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -47,7 +50,7 @@ public class ForumController {
             Authentication authentication
     ) {
         if (authentication == null) {
-            throw new IllegalArgumentException("Требуется авторизация");
+            throw new IllegalArgumentException("Authentication required");
         }
 
         ForumTopicView created = storageService.addTopic(gameId, authentication.getName(), request);
@@ -66,11 +69,56 @@ public class ForumController {
             Authentication authentication
     ) {
         if (authentication == null) {
-            throw new IllegalArgumentException("Требуется авторизация");
+            throw new IllegalArgumentException("Authentication required");
         }
 
         ForumMessageView created = storageService.addMessage(topicId, authentication.getName(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PatchMapping("/messages/{messageId}")
+    public ResponseEntity<ForumMessageView> updateMessage(
+            @PathVariable Long messageId,
+            @RequestBody UpdateForumMessageRequest request,
+            Authentication authentication
+    ) {
+        if (authentication == null) {
+            throw new IllegalArgumentException("Authentication required");
+        }
+
+        ForumMessageView updated = storageService.updateMessage(
+                messageId,
+                authentication.getName(),
+                isAdmin(authentication),
+                request
+        );
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/messages/{messageId}")
+    public ResponseEntity<Void> deleteMessage(
+            @PathVariable Long messageId,
+            Authentication authentication
+    ) {
+        if (!isAdmin(authentication)) {
+            throw new AccessDeniedException("Admin role is required");
+        }
+
+        storageService.deleteMessage(messageId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/topics/{topicId}")
+    public ResponseEntity<Void> deleteTopic(
+            @PathVariable Long topicId,
+            Authentication authentication
+    ) {
+        if (!isAdmin(authentication)) {
+            throw new AccessDeniedException("Admin role is required");
+        }
+
+        storageService.deleteTopic(topicId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/messages/{messageId}/like")
@@ -79,7 +127,7 @@ public class ForumController {
             Authentication authentication
     ) {
         if (authentication == null) {
-            throw new IllegalArgumentException("Требуется авторизация");
+            throw new IllegalArgumentException("Authentication required");
         }
 
         ForumMessageReactionView updated = storageService.likeMessage(messageId);
@@ -92,7 +140,7 @@ public class ForumController {
             Authentication authentication
     ) {
         if (authentication == null) {
-            throw new IllegalArgumentException("Ð¢Ñ€ÐµÐ±ÑƒÐµÑ‚ÑÑ Ð°Ð²Ñ‚Ð¾Ñ€Ð¸Ð·Ð°Ñ†Ð¸Ñ");
+            throw new IllegalArgumentException("Authentication required");
         }
 
         ForumMessageReactionView updated = storageService.dislikeMessage(messageId);
@@ -105,10 +153,20 @@ public class ForumController {
             Authentication authentication
     ) {
         if (authentication == null) {
-            throw new IllegalArgumentException("Требуется авторизация");
+            throw new IllegalArgumentException("Authentication required");
         }
 
         String url = uploadService.storeImage(file);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ForumImageUploadView(url));
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        if (authentication == null) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN"::equals);
     }
 }

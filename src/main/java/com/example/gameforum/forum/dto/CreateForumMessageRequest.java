@@ -4,6 +4,8 @@ import java.util.List;
 
 public record CreateForumMessageRequest(
         String content,
-        List<String> imageUrls
+        List<String> imageUrls,
+        Long parentMessageId,
+        Long quotedMessageId
 ) {
 }

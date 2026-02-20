@@ -43,6 +43,10 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/games/*/comments").hasAnyRole("USER", "PUBLISHER", "ADMIN")
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/games/*/rating").hasAnyRole("USER", "PUBLISHER", "ADMIN")
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/forum/**").hasAnyRole("USER", "PUBLISHER", "ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/forum/messages/*").hasAnyRole("USER", "PUBLISHER", "ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/forum/**").hasRole("ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/publisher/games/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(
                                 "/",
                                 "/home",
